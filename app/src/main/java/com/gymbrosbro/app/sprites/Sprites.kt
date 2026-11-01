@@ -127,5 +127,77 @@ object Sprites {
         base,
     )
 
-    val all: List<Sprite> = listOf(Home, Dumbbell, Calendar, BarChart, Player, Flex)
+    val ArrowLeft = Sprite(
+        listOf(
+            "............",
+            "....ff......",
+            "...fff......",
+            "..ffff......",
+            ".fffff......",
+            "ffffffffffff",
+            "ffffffffffff",
+            ".fffff......",
+            "..ffff......",
+            "...fff......",
+            "....ff......",
+            "............",
+        ),
+        base,
+    )
+
+    val Check = Sprite(
+        listOf(
+            "............",
+            "............",
+            "..........ff",
+            ".........fff",
+            "........fff.",
+            ".ff....fff..",
+            ".fff..fff...",
+            "..ffffff....",
+            "...ffff.....",
+            "....ff......",
+            "............",
+            "............",
+        ),
+        base,
+    )
+
+    val Star = Sprite(
+        listOf(
+            ".....ff.....",
+            ".....ff.....",
+            "....ffff....",
+            "ffffffffffff",
+            ".ffffffffff.",
+            "..ffffffff..",
+            "...ffffff...",
+            "...ffffff...",
+            "..fff..fff..",
+            "..ff....ff..",
+            ".ff......ff.",
+            "............",
+        ),
+        base,
+    )
+
+    val Dots = Sprite(
+        listOf(
+            "............",
+            "............",
+            "............",
+            "............",
+            "............",
+            ".ff..ff..ff.",
+            ".ff..ff..ff.",
+            "............",
+            "............",
+            "............",
+            "............",
+            "............",
+        ),
+        base,
+    )
+
+    val all: List<Sprite> = listOf(Home, Dumbbell, Calendar, BarChart, Player, Flex, ArrowLeft, Check, Star, Dots)
 }

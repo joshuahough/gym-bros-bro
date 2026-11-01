@@ -24,6 +24,12 @@ private val GbbColorScheme = darkColorScheme(
     surface = GbbColors.Night,
     onSurface = GbbColors.Chalk,
     surfaceVariant = GbbColors.Dusk,
+    // Menus, date pickers and dialogs read these container colors.
+    surfaceContainerLowest = GbbColors.Void,
+    surfaceContainerLow = GbbColors.Night,
+    surfaceContainer = GbbColors.Dusk,
+    surfaceContainerHigh = GbbColors.Dusk,
+    surfaceContainerHighest = GbbColors.Steel,
     onSurfaceVariant = GbbColors.Fog,
     outline = GbbColors.Steel,
     error = GbbColors.Red,

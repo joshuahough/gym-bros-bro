@@ -1,9 +1,44 @@
 package com.gymbrosbro.app.ui
 
 import androidx.compose.ui.graphics.Color
+import com.gymbrosbro.app.domain.model.Discipline
 import com.gymbrosbro.app.domain.model.Equipment
+import com.gymbrosbro.app.domain.model.LoadClass
 import com.gymbrosbro.app.domain.model.MuscleGroup
+import com.gymbrosbro.app.domain.model.TrackingType
 import com.gymbrosbro.app.ui.theme.GbbColors
+
+val TrackingType.label: String
+    get() = when (this) {
+        TrackingType.WEIGHT_REPS -> "Weight × Reps"
+        TrackingType.BODYWEIGHT_REPS -> "Bodyweight Reps"
+        TrackingType.DURATION -> "Time"
+        TrackingType.DISTANCE_DURATION -> "Distance + Time"
+        TrackingType.WEIGHT_DISTANCE -> "Weight × Distance"
+    }
+
+val Discipline.label: String
+    get() = when (this) {
+        Discipline.WEIGHTLIFTING -> "Weightlifting"
+        Discipline.CALISTHENICS -> "Calisthenics"
+        Discipline.CARDIO -> "Cardio"
+        Discipline.MOBILITY -> "Mobility"
+        Discipline.PLYOMETRIC -> "Plyometric"
+    }
+
+val LoadClass.label: String
+    get() = when (this) {
+        LoadClass.LIGHT -> "Light"
+        LoadClass.MEDIUM -> "Medium"
+        LoadClass.HEAVY -> "Heavy"
+    }
+
+val LoadClass.color: Color
+    get() = when (this) {
+        LoadClass.LIGHT -> GbbColors.Green
+        LoadClass.MEDIUM -> GbbColors.Gold
+        LoadClass.HEAVY -> GbbColors.Red
+    }
 
 val MuscleGroup.label: String
     get() = when (this) {

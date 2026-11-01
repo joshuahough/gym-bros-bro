@@ -22,16 +22,22 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import com.gymbrosbro.app.ui.components.ComingSoonPanel
 import com.gymbrosbro.app.ui.components.PixelPanel
 import com.gymbrosbro.app.ui.components.ScreenHeader
 import com.gymbrosbro.app.ui.screens.library.LibraryScreen
+import com.gymbrosbro.app.ui.screens.workouts.WorkoutsTab
 import com.gymbrosbro.app.ui.theme.GbbColors
 
 private val tabs = listOf("WORKOUTS", "LIBRARY")
 
 @Composable
-fun TrainScreen() {
+fun TrainScreen(
+    onOpenSession: (Long) -> Unit,
+    onEditTemplate: (Long) -> Unit,
+    onNewTemplate: () -> Unit,
+    onOpenExercise: (String) -> Unit,
+    onNewCustomExercise: () -> Unit,
+) {
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
 
     Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
@@ -60,12 +66,8 @@ fun TrainScreen() {
         }
         Box(Modifier.fillMaxSize().padding(top = 12.dp)) {
             when (selectedTab) {
-                0 -> ComingSoonPanel(
-                    title = "NO WORKOUTS YET",
-                    body = "The workout builder is coming next. You'll combine library exercises into your own routines here.",
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                else -> LibraryScreen()
+                0 -> WorkoutsTab(onOpenSession, onEditTemplate, onNewTemplate)
+                else -> LibraryScreen(onOpenExercise, onNewCustomExercise)
             }
         }
     }

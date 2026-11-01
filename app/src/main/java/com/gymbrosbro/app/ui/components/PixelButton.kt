@@ -34,6 +34,7 @@ fun PixelButton(
     color: Color = GbbColors.Gold,
     contentColor: Color = GbbColors.Void,
     enabled: Boolean = true,
+    small: Boolean = false,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
@@ -44,7 +45,7 @@ fun PixelButton(
 
     Box(
         modifier = modifier
-            .defaultMinSize(minHeight = 52.dp)
+            .defaultMinSize(minHeight = if (small) 40.dp else 52.dp)
             .clickable(
                 interactionSource = interaction,
                 indication = null,
@@ -61,7 +62,7 @@ fun PixelButton(
             }
             .padding(bottom = depth)
             .offset(y = sink)
-            .padding(horizontal = 20.dp, vertical = 14.dp),
+            .padding(horizontal = if (small) 12.dp else 20.dp, vertical = if (small) 8.dp else 14.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(

@@ -29,6 +29,9 @@ import com.gymbrosbro.app.data.db.entity.WorkoutTemplateEntity
 @TypeConverters(Converters::class)
 abstract class GymDatabase : RoomDatabase() {
     abstract fun exerciseDao(): ExerciseDao
+    abstract fun templateDao(): TemplateDao
+    abstract fun sessionDao(): SessionDao
+    abstract fun bodyweightDao(): BodyweightDao
 
     companion object {
         fun build(context: Context): GymDatabase =

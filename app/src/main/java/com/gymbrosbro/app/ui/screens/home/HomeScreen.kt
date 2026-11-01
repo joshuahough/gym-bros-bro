@@ -13,19 +13,43 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewModelScope
+import com.gymbrosbro.app.data.SessionRepository
+import com.gymbrosbro.app.data.db.entity.WorkoutSessionEntity
 import com.gymbrosbro.app.sprites.SpriteImage
 import com.gymbrosbro.app.sprites.Sprites
+import com.gymbrosbro.app.ui.appViewModel
 import com.gymbrosbro.app.ui.components.PixelButton
 import com.gymbrosbro.app.ui.components.PixelPanel
+import com.gymbrosbro.app.ui.components.StatTile
+import com.gymbrosbro.app.ui.display
+import com.gymbrosbro.app.ui.localDate
 import com.gymbrosbro.app.ui.theme.GbbColors
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+
+class HomeViewModel(sessions: SessionRepository) : ViewModel() {
+    val inProgress: StateFlow<WorkoutSessionEntity?> = sessions.observeInProgress()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    val lastWorkout: StateFlow<WorkoutSessionEntity?> = sessions.observeLatestCompleted()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+}
 
 @Composable
-fun HomeScreen(onPressStart: () -> Unit) {
+fun HomeScreen(onPressStart: () -> Unit, onResume: (Long) -> Unit) {
+    val viewModel = appViewModel { c, _ -> HomeViewModel(c.sessionRepository) }
+    val inProgress by viewModel.inProgress.collectAsStateWithLifecycle()
+    val lastWorkout by viewModel.lastWorkout.collectAsStateWithLifecycle()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -62,23 +86,47 @@ fun HomeScreen(onPressStart: () -> Unit) {
             }
         }
 
-        PixelPanel(Modifier.fillMaxWidth()) {
-            Column {
-                Text("TODAY", style = MaterialTheme.typography.titleLarge, color = GbbColors.Cyan)
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = "No workout scheduled. Pick one and get after it.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = GbbColors.Chalk,
-                )
+        val active = inProgress
+        if (active != null) {
+            PixelPanel(Modifier.fillMaxWidth(), border = GbbColors.Green) {
+                Column {
+                    Text("IN PROGRESS", style = MaterialTheme.typography.titleLarge, color = GbbColors.Green)
+                    Spacer(Modifier.height(8.dp))
+                    Text(active.name, style = MaterialTheme.typography.bodyLarge, color = GbbColors.Chalk)
+                }
             }
+            PixelButton(
+                text = "CONTINUE",
+                onClick = { onResume(active.id) },
+                color = GbbColors.Green,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        } else {
+            PixelPanel(Modifier.fillMaxWidth()) {
+                Column {
+                    Text("TODAY", style = MaterialTheme.typography.titleLarge, color = GbbColors.Cyan)
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "Pick a workout and get after it.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = GbbColors.Chalk,
+                    )
+                    lastWorkout?.let { last ->
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "Last: ${last.name} · ${last.startedAt.localDate().display()}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = GbbColors.Fog,
+                        )
+                    }
+                }
+            }
+            PixelButton(
+                text = "PRESS START",
+                onClick = onPressStart,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
-
-        PixelButton(
-            text = "PRESS START",
-            onClick = onPressStart,
-            modifier = Modifier.fillMaxWidth(),
-        )
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -86,17 +134,6 @@ fun HomeScreen(onPressStart: () -> Unit) {
         ) {
             StatTile("COMBO", "x0", GbbColors.Pink, Modifier.weight(1f))
             StatTile("LEVEL", "1", GbbColors.Green, Modifier.weight(1f))
-        }
-    }
-}
-
-@Composable
-private fun StatTile(label: String, value: String, accent: Color, modifier: Modifier = Modifier) {
-    PixelPanel(modifier) {
-        Column {
-            Text(label, style = MaterialTheme.typography.labelMedium, color = GbbColors.Fog)
-            Spacer(Modifier.height(8.dp))
-            Text(value, style = MaterialTheme.typography.headlineLarge, color = accent)
         }
     }
 }

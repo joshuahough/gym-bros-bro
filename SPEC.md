@@ -204,7 +204,7 @@ Custom calisthenics exercises can set their own factor.
   - "Last time: 145 × 8, 8, 8"
   - Set rows pre-filled from last time
   - A **suggestion chip** (§8). Tapping it fills the sets
-- Tap a set's checkbox to complete it. You can add or remove sets, mark warm-ups, add, swap or reorder exercises mid-session, and add notes.
+- Tap a set's checkbox to complete it. If the next row is still empty, it copies the numbers you just logged, so a first-ever workout isn't three rounds of retyping. You can add or remove sets, mark warm-ups, add, swap or reorder exercises mid-session, and add notes.
 - **No rest timer in v1.** Session duration is tracked from start and end times.
 - In-progress sessions are saved continuously, so killing the app never loses a workout. You can resume from Home.
 - **Warm-ups count toward every total** (reps, volume, time, distance). They're only left out of PR detection and overload suggestions, so a light warm-up never gets mistaken for your working weight.
@@ -350,7 +350,7 @@ Turning monetization on is reported to be hard or impossible to reverse for an a
 | Phase | Scope | Done when |
 |---|---|---|
 | **0. Foundation** ✅ | Android Studio project, git, version catalog, theme (palette, fonts, pixel components), 5-tab nav skeleton, Room setup, sprite renderer, seed pipeline + `exercises.json` | Themed app with empty tabs installs on the owner's phone |
-| **1. Core loop** | Library (browse/search/filter/detail), custom exercises, templates, session logging with pre-fill and resume, basic finish screen, history with edit/delete, settings (units, bodyweight) | The owner runs real workouts on it |
+| **1. Core loop** ✅ | Library (browse/search/filter/detail), custom exercises, templates, session logging with pre-fill and resume, basic finish screen, history with edit/delete, settings (units, bodyweight) | The owner runs real workouts on it |
 | **2. Feedback** | PR detection + NEW HIGH SCORE, overload suggestions, Stats, per-exercise stats and charts, schedule + calendar, both streaks + freezes + pause, reminders | Calendar shows the weekly plan, streaks and stats are accurate |
 | **3. Fun layer** | XP/levels, achievements, avatar + locker + unlocks, all 15 muscle icons, sound effects and haptics | Workouts earn XP and unlock outfits |
 | **4. Ship** | Onboarding, export/import, Auto Backup check, accessibility and polish pass, Supporter Pack + billing, privacy policy, Data Safety form, store listing and screenshots, closed test (12+ testers × 14 days), production release | Live on Google Play |

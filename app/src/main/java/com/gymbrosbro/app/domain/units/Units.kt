@@ -26,6 +26,17 @@ object Units {
     fun displayToMeters(value: Double, system: UnitSystem): Double =
         value * if (system == UnitSystem.IMPERIAL) METERS_PER_MILE else METERS_PER_KM
 
+    const val METERS_PER_YARD = 0.9144
+
+    /** Short distances (carries, sled pushes): yards or meters. */
+    fun metersToShort(meters: Double, system: UnitSystem): Double =
+        if (system == UnitSystem.IMPERIAL) meters / METERS_PER_YARD else meters
+
+    fun shortToMeters(value: Double, system: UnitSystem): Double =
+        if (system == UnitSystem.IMPERIAL) value * METERS_PER_YARD else value
+
+    fun shortDistanceUnit(system: UnitSystem): String = if (system == UnitSystem.IMPERIAL) "yd" else "m"
+
     fun weightUnit(system: UnitSystem): String = if (system == UnitSystem.IMPERIAL) "lb" else "kg"
 
     fun distanceUnit(system: UnitSystem): String = if (system == UnitSystem.IMPERIAL) "mi" else "km"
