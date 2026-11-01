@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mirrors GbbColors in ui/theme/Color.kt; only what the window/launcher needs before Compose draws. -->
+    <color name="void_bg">#FF0B0A1A</color>
+    <color name="launcher_background">#FF2B2950</color>
+</resources>

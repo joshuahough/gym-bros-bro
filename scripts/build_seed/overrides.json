@@ -1,0 +1,122 @@
+{
+  "patches": {
+    "barbell-bench-press-medium-grip": {
+      "name": "Barbell Bench Press",
+      "aliases": ["bench", "bench press", "flat bench", "bb bench"]
+    },
+    "barbell-squat": {
+      "name": "Barbell Back Squat",
+      "aliases": ["squat", "back squat", "bb squat"]
+    },
+    "barbell-deadlift": {
+      "aliases": ["deadlift", "conventional deadlift", "dl"]
+    },
+    "standing-military-press": {
+      "name": "Overhead Press",
+      "aliases": ["ohp", "military press", "standing press", "shoulder press"]
+    },
+    "bent-over-barbell-row": {
+      "aliases": ["barbell row", "bb row", "bent row"]
+    },
+    "romanian-deadlift": {
+      "aliases": ["rdl", "stiff leg deadlift"]
+    },
+    "dumbbell-bench-press": {
+      "aliases": ["db bench", "db bench press"]
+    },
+    "dumbbell-shoulder-press": {
+      "aliases": ["db shoulder press", "db ohp"]
+    },
+    "dumbbell-bicep-curl": {
+      "name": "Dumbbell Curl",
+      "aliases": ["db curl", "bicep curl", "biceps curl"]
+    },
+    "pullups": {
+      "name": "Pull-Up",
+      "aliases": ["pullup", "pull up", "pullups"]
+    },
+    "chin-up": {
+      "aliases": ["chinup", "chin up", "chin-ups"]
+    },
+    "pushups": {
+      "name": "Push-Up",
+      "aliases": ["pushup", "push up", "press-up"]
+    },
+    "parallel-bar-dip": {
+      "name": "Dip",
+      "aliases": ["dips", "parallel bar dips"]
+    },
+    "plank": {
+      "recommendedDurationSec": 60
+    },
+    "running-treadmill": {
+      "aliases": ["treadmill run", "treadmill"]
+    }
+  },
+  "additions": [
+    {
+      "id": "running",
+      "name": "Running",
+      "aliases": ["run", "jog", "jogging", "outdoor run"],
+      "discipline": "CARDIO",
+      "trackingType": "DISTANCE_DURATION",
+      "equipment": "NONE",
+      "primaryMuscle": "CARDIO",
+      "secondaryMuscles": ["QUADS", "HAMSTRINGS", "CALVES", "GLUTES"],
+      "mechanic": null,
+      "recommendedLoad": "LIGHT",
+      "recommendedSets": 1,
+      "recommendedDurationSec": 1800,
+      "isUnilateral": false,
+      "bodyweightFactor": null,
+      "instructions": [
+        "Warm up with 5 minutes of brisk walking or easy jogging.",
+        "Run at a pace where you can still speak in short sentences.",
+        "Land under your hips with short, quick strides and relaxed shoulders.",
+        "Cool down with a few minutes of walking."
+      ]
+    },
+    {
+      "id": "swimming",
+      "name": "Swimming",
+      "aliases": ["swim", "laps", "lap swim"],
+      "discipline": "CARDIO",
+      "trackingType": "DISTANCE_DURATION",
+      "equipment": "NONE",
+      "primaryMuscle": "CARDIO",
+      "secondaryMuscles": ["SHOULDERS", "LATS", "CORE"],
+      "mechanic": null,
+      "recommendedLoad": "LIGHT",
+      "recommendedSets": 1,
+      "recommendedDurationSec": 1800,
+      "isUnilateral": false,
+      "bodyweightFactor": null,
+      "instructions": [
+        "Warm up with a couple of easy laps.",
+        "Swim at a steady, sustainable pace in your stroke of choice.",
+        "Log total distance and time for the session."
+      ]
+    },
+    {
+      "id": "walking",
+      "name": "Walking",
+      "aliases": ["walk", "hike", "outdoor walk"],
+      "discipline": "CARDIO",
+      "trackingType": "DISTANCE_DURATION",
+      "equipment": "NONE",
+      "primaryMuscle": "CARDIO",
+      "secondaryMuscles": ["QUADS", "CALVES", "GLUTES"],
+      "mechanic": null,
+      "recommendedLoad": "LIGHT",
+      "recommendedSets": 1,
+      "recommendedDurationSec": 1800,
+      "isUnilateral": false,
+      "bodyweightFactor": null,
+      "instructions": [
+        "Walk at a brisk pace with an upright posture.",
+        "Swing your arms naturally and keep a steady rhythm.",
+        "Log total distance and time."
+      ]
+    }
+  ]
+}

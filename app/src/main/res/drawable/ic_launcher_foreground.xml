@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generated from the pixel dumbbell sprite: 12x12 grid, 5 units per pixel, centered in the 66dp safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FF0B0A1A"
+        android:pathData="M29,34h5v5h-5zM34,34h5v5h-5zM69,34h5v5h-5zM74,34h5v5h-5zM24,39h5v5h-5zM39,39h5v5h-5zM64,39h5v5h-5zM79,39h5v5h-5zM24,44h5v5h-5zM39,44h5v5h-5zM64,44h5v5h-5zM79,44h5v5h-5zM24,49h5v5h-5zM39,49h5v5h-5zM64,49h5v5h-5zM79,49h5v5h-5zM24,54h5v5h-5zM39,54h5v5h-5zM64,54h5v5h-5zM79,54h5v5h-5zM24,59h5v5h-5zM39,59h5v5h-5zM64,59h5v5h-5zM79,59h5v5h-5zM24,64h5v5h-5zM39,64h5v5h-5zM64,64h5v5h-5zM79,64h5v5h-5zM29,69h5v5h-5zM34,69h5v5h-5zM69,69h5v5h-5zM74,69h5v5h-5z" />
+    <path
+        android:fillColor="#FFFFC93C"
+        android:pathData="M29,39h5v5h-5zM34,39h5v5h-5zM69,39h5v5h-5zM74,39h5v5h-5zM29,44h5v5h-5zM34,44h5v5h-5zM69,44h5v5h-5zM74,44h5v5h-5zM29,49h5v5h-5zM34,49h5v5h-5zM69,49h5v5h-5zM74,49h5v5h-5zM29,54h5v5h-5zM34,54h5v5h-5zM69,54h5v5h-5zM74,54h5v5h-5zM29,59h5v5h-5zM34,59h5v5h-5zM69,59h5v5h-5zM74,59h5v5h-5zM29,64h5v5h-5zM34,64h5v5h-5zM69,64h5v5h-5zM74,64h5v5h-5z" />
+    <path
+        android:fillColor="#FF3CE1FF"
+        android:pathData="M44,49h5v5h-5zM49,49h5v5h-5zM54,49h5v5h-5zM59,49h5v5h-5zM44,54h5v5h-5zM49,54h5v5h-5zM54,54h5v5h-5zM59,54h5v5h-5z" />
+</vector>
