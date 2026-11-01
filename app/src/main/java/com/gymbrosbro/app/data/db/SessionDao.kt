@@ -9,6 +9,7 @@ import com.gymbrosbro.app.data.db.entity.SessionExerciseEntity
 import com.gymbrosbro.app.data.db.entity.SetEntryEntity
 import com.gymbrosbro.app.data.db.entity.WorkoutSessionEntity
 import kotlinx.coroutines.flow.Flow
+import java.time.Instant
 
 @Dao
 interface SessionDao {
@@ -46,6 +47,9 @@ interface SessionDao {
     @Transaction
     @Query("SELECT * FROM workout_session WHERE status = 'COMPLETED' ORDER BY startedAt DESC")
     fun observeCompleted(): Flow<List<SessionWithExercises>>
+
+    @Query("SELECT * FROM workout_session WHERE status = 'COMPLETED' AND startedAt >= :from")
+    suspend fun getCompletedSince(from: Instant): List<WorkoutSessionEntity>
 
     // Exercises within a session
 

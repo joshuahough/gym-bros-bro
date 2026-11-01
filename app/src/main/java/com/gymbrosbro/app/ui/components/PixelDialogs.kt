@@ -1,5 +1,6 @@
 package com.gymbrosbro.app.ui.components
 
+import android.text.format.DateFormat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -13,6 +14,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -28,6 +32,7 @@ import androidx.compose.ui.window.Dialog
 import com.gymbrosbro.app.ui.theme.GbbColors
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.ZoneOffset
 
 @Composable
@@ -39,7 +44,7 @@ fun PixelDialog(
     Dialog(onDismissRequest = onDismiss) {
         PixelPanel(Modifier.fillMaxWidth(), fill = GbbColors.Night, border = GbbColors.Gold) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(title, style = MaterialTheme.typography.titleLarge, color = GbbColors.Gold)
+                if (title.isNotEmpty()) Text(title, style = MaterialTheme.typography.titleLarge, color = GbbColors.Gold)
                 content()
             }
         }
@@ -109,32 +114,79 @@ fun NumberInputDialog(
 }
 
 /** Date picker limited to today and earlier (no logging future workouts). */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PastDatePickerDialog(
     initial: LocalDate,
     onConfirm: (LocalDate) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val todayUtcMillis = LocalDate.now().atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli()
+    val today = LocalDate.now()
+    LimitedDatePickerDialog(initial, { it <= today }, { it <= today.year }, onConfirm, onDismiss)
+}
+
+/** Date picker limited to today and later, for planning. */
+@Composable
+fun FutureDatePickerDialog(
+    initial: LocalDate,
+    onConfirm: (LocalDate) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val today = LocalDate.now()
+    LimitedDatePickerDialog(initial, { it >= today }, { it >= today.year }, onConfirm, onDismiss)
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LimitedDatePickerDialog(
+    initial: LocalDate,
+    isSelectable: (LocalDate) -> Boolean,
+    isSelectableYear: (Int) -> Boolean,
+    onConfirm: (LocalDate) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    // The picker works in UTC midnights.
+    fun LocalDate.millis() = atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli()
+    fun Long.date() = Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC).toLocalDate()
     val state = rememberDatePickerState(
-        initialSelectedDateMillis = initial.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli(),
+        initialSelectedDateMillis = initial.millis(),
         selectableDates = object : SelectableDates {
-            override fun isSelectableDate(utcTimeMillis: Long) = utcTimeMillis <= todayUtcMillis
-            override fun isSelectableYear(year: Int) = year <= LocalDate.now().year
+            override fun isSelectableDate(utcTimeMillis: Long) = isSelectable(utcTimeMillis.date())
+            override fun isSelectableYear(year: Int) = isSelectableYear(year)
         },
     )
     DatePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(onClick = {
-                state.selectedDateMillis?.let { millis ->
-                    onConfirm(Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate())
-                }
-            }) { Text("OK", color = GbbColors.Gold) }
+            TextButton(onClick = { state.selectedDateMillis?.let { onConfirm(it.date()) } }) {
+                Text("OK", color = GbbColors.Gold)
+            }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("CANCEL", color = GbbColors.Fog) } },
     ) {
         DatePicker(state = state)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PixelTimePickerDialog(
+    title: String,
+    initial: LocalTime,
+    onConfirm: (LocalTime) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val state = rememberTimePickerState(
+        initialHour = initial.hour,
+        initialMinute = initial.minute,
+        is24Hour = DateFormat.is24HourFormat(LocalContext.current),
+    )
+    PixelDialog(title, onDismiss) {
+        TimePicker(state = state)
+        PixelButton(
+            "SAVE",
+            onClick = { onConfirm(LocalTime.of(state.hour, state.minute)) },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        PixelButton("CANCEL", onClick = onDismiss, color = GbbColors.Steel, contentColor = GbbColors.Chalk, modifier = Modifier.fillMaxWidth())
     }
 }

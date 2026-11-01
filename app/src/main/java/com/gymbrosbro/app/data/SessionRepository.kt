@@ -1,6 +1,7 @@
 package com.gymbrosbro.app.data
 
 import androidx.room.withTransaction
+import com.gymbrosbro.app.data.db.ExercisePerformance
 import com.gymbrosbro.app.data.db.GymDatabase
 import com.gymbrosbro.app.data.db.SessionWithExercises
 import com.gymbrosbro.app.data.db.entity.SessionExerciseEntity
@@ -37,6 +38,10 @@ class SessionRepository(
     suspend fun getSession(id: Long): SessionWithExercises? = dao.getDetail(id)
 
     fun observeCompleted(): Flow<List<SessionWithExercises>> = dao.observeCompleted()
+
+    /** Completed workouts started on or after [date] (local time). */
+    suspend fun completedSince(date: LocalDate): List<WorkoutSessionEntity> =
+        dao.getCompletedSince(date.atStartOfDay(ZoneId.systemDefault()).toInstant())
 
     // Starting
 
@@ -101,6 +106,10 @@ class SessionRepository(
     suspend fun lastSets(exerciseId: String, excludeSessionId: Long): List<SetEntryEntity> =
         dao.getPerformances(exerciseId, excludeSessionId, limit = 1).firstOrNull()?.sortedSets.orEmpty()
 
+    /** Every earlier completed performance of [exerciseId], newest first. */
+    suspend fun priorPerformances(exerciseId: String, session: WorkoutSessionEntity): List<ExercisePerformance> =
+        dao.getPerformances(exerciseId, session.id, limit = Int.MAX_VALUE).filter { it.session.startedAt < session.startedAt }
+
     suspend fun removeExercise(sessionExerciseId: Long) = dao.deleteSessionExercise(sessionExerciseId)
 
     /** Moves an exercise up (-1) or down (+1) in the session. */
@@ -122,10 +131,33 @@ class SessionRepository(
     }
 
     /** Read-modify-write in a transaction so quick edits to different fields can't overwrite each other. */
-    suspend fun updateSet(setId: Long, transform: (SetEntryEntity) -> SetEntryEntity) = database.withTransaction {
-        val current = dao.getSet(setId) ?: return@withTransaction
-        val updated = transform(current)
-        if (updated != current) dao.updateSet(updated)
+    suspend fun updateSet(setId: Long, transform: (SetEntryEntity) -> SetEntryEntity): SetEntryEntity? =
+        database.withTransaction {
+            val current = dao.getSet(setId) ?: return@withTransaction null
+            val updated = transform(current)
+            if (updated != current) dao.updateSet(updated)
+            updated
+        }
+
+    suspend fun getSets(sessionExerciseId: Long): List<SetEntryEntity> = dao.getSets(sessionExerciseId)
+
+    /** Fills an exercise's unchecked working sets with a suggestion, in order; the last draft repeats. */
+    suspend fun applyDrafts(sessionExerciseId: Long, drafts: List<SetDraft>) = database.withTransaction {
+        if (drafts.isEmpty()) return@withTransaction
+        dao.getSets(sessionExerciseId)
+            .filter { !it.isCompleted && !it.isWarmup }
+            .forEachIndexed { i, set ->
+                val d = drafts.getOrElse(i) { drafts.last() }
+                dao.updateSet(
+                    set.copy(
+                        weightKg = d.weightKg,
+                        reps = d.reps,
+                        addedWeightKg = d.addedWeightKg,
+                        durationSec = d.durationSec,
+                        distanceM = d.distanceM,
+                    ),
+                )
+            }
     }
 
     /** Copies a just-completed set's numbers into the next row if that row is still empty. */

@@ -1,6 +1,9 @@
 package com.gymbrosbro.app.ui.screens.session
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -27,6 +30,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -41,10 +46,16 @@ import com.gymbrosbro.app.ui.components.MenuAction
 import com.gymbrosbro.app.ui.components.OverflowMenu
 import com.gymbrosbro.app.ui.components.PastDatePickerDialog
 import com.gymbrosbro.app.ui.components.PixelButton
+import com.gymbrosbro.app.ui.components.PixelDialog
 import com.gymbrosbro.app.ui.components.PixelPanel
 import com.gymbrosbro.app.ui.components.PixelTextField
 import com.gymbrosbro.app.ui.components.PixelTopBar
+import com.gymbrosbro.app.sprites.SpriteImage
+import com.gymbrosbro.app.sprites.Sprites
 import com.gymbrosbro.app.ui.display
+import com.gymbrosbro.app.ui.format
+import com.gymbrosbro.app.ui.label
+import com.gymbrosbro.app.ui.screens.library.recommendationText
 import com.gymbrosbro.app.ui.localDate
 import com.gymbrosbro.app.ui.screens.library.MuscleIcon
 import com.gymbrosbro.app.ui.summaryLine
@@ -70,6 +81,7 @@ fun SessionScreen(
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val keepScreenOn by viewModel.keepScreenOn.collectAsStateWithLifecycle()
+    val highScore by viewModel.highScore.collectAsStateWithLifecycle()
     val units = LocalUnitSystem.current
 
     var confirmFinish by remember { mutableStateOf(false) }
@@ -212,6 +224,8 @@ fun SessionScreen(
         )
     }
 
+    highScore?.let { HighScoreDialog(it, units, onDismiss = viewModel::dismissHighScore) }
+
     if (pickDate) {
         PastDatePickerDialog(
             initial = s.session.startedAt.localDate(),
@@ -224,6 +238,7 @@ fun SessionScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ExerciseBlockCard(
     block: ExerciseBlock,
@@ -260,11 +275,24 @@ private fun ExerciseBlockCard(
             }
             if (showLastTime) {
                 val last = SetFormat.summary(type, block.lastTime, units)
-                Text(
-                    if (last.isEmpty()) "First time — set your baseline." else "Last: $last",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (last.isEmpty()) GbbColors.Fog else GbbColors.Cyan,
-                )
+                if (last.isEmpty()) {
+                    val recommended = recommendationText(block.exercise)
+                    Text(
+                        "First time — set your baseline." +
+                            (recommended?.let { " Try $it, ${block.exercise.recommendedLoad.label.lowercase()} load." } ?: ""),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = GbbColors.Fog,
+                    )
+                } else {
+                    Text("Last: $last", style = MaterialTheme.typography.bodyMedium, color = GbbColors.Cyan)
+                }
+                if (block.suggestions.isNotEmpty()) {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        block.suggestions.forEach { suggestion ->
+                            SuggestionChip(suggestion.label) { viewModel.applySuggestion(block.sessionExerciseId, suggestion) }
+                        }
+                    }
+                }
             }
             SetHeader(type, units)
             var working = 0
@@ -277,7 +305,7 @@ private fun ExerciseBlockCard(
                         type = type,
                         units = units,
                         onUpdate = { transform -> viewModel.updateSet(set.id, transform) },
-                        onToggleComplete = { viewModel.toggleComplete(set.id, type) },
+                        onToggleComplete = { viewModel.toggleComplete(set.id, block.exercise) },
                         onToggleWarmup = { viewModel.toggleWarmup(set.id) },
                         onDelete = { viewModel.deleteSet(set.id) },
                     )
@@ -305,6 +333,60 @@ private fun ExerciseBlockCard(
             },
             onDismiss = { confirmRemove = false },
         )
+    }
+}
+
+/** Tap to fill the unchecked sets with a suggested next step. */
+@Composable
+private fun SuggestionChip(label: String, onClick: () -> Unit) {
+    PixelPanel(
+        modifier = Modifier.clickable(role = Role.Button, onClickLabel = "Use suggestion", onClick = onClick),
+        fill = GbbColors.Dusk,
+        border = GbbColors.Gold,
+        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+    ) {
+        Text("▲ $label", style = MaterialTheme.typography.labelMedium, color = GbbColors.Gold)
+    }
+}
+
+@Composable
+private fun HighScoreDialog(highScore: HighScore, units: UnitSystem, onDismiss: () -> Unit) {
+    PixelDialog("", onDismiss = onDismiss) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SpriteImage(Sprites.Star.recolor('f' to GbbColors.Gold), contentDescription = null, size = 28.dp)
+            Spacer(Modifier.width(10.dp))
+            SpriteImage(Sprites.Star.recolor('f' to GbbColors.Pink), contentDescription = null, size = 28.dp)
+            Spacer(Modifier.width(10.dp))
+            SpriteImage(Sprites.Star.recolor('f' to GbbColors.Cyan), contentDescription = null, size = 28.dp)
+        }
+        Text(
+            "NEW HIGH SCORE!",
+            style = MaterialTheme.typography.headlineSmall,
+            color = GbbColors.Gold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Text(
+            highScore.exercise.name,
+            style = MaterialTheme.typography.titleMedium,
+            color = GbbColors.Chalk,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        highScore.hits.forEach { hit ->
+            Text(
+                "${hit.type.label}: ${hit.type.format(hit.value, units)} (was ${hit.type.format(hit.previous, units)})",
+                style = MaterialTheme.typography.bodyLarge,
+                color = GbbColors.Green,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        PixelButton("NICE!", onClick = onDismiss, modifier = Modifier.fillMaxWidth())
     }
 }
 

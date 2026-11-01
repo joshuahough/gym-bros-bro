@@ -24,6 +24,8 @@ class TemplateRepository(private val database: GymDatabase) {
 
     fun observeTemplates(): Flow<List<TemplateWithExercises>> = dao.observeTemplates()
 
+    fun observeAll(): Flow<List<WorkoutTemplateEntity>> = dao.observeAll()
+
     suspend fun getTemplate(id: Long): TemplateWithExercises? = dao.getTemplateWithExercises(id)
 
     /** Inserts ([id] == null) or replaces a workout and its exercise list. Returns its id. */

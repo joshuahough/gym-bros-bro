@@ -1,6 +1,26 @@
 package com.gymbrosbro.app.ui.screens.library
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.graphics.Color
+import com.gymbrosbro.app.data.settings.SettingsRepository
+import com.gymbrosbro.app.domain.records.RecordType
+import com.gymbrosbro.app.domain.records.Records
+import com.gymbrosbro.app.domain.stats.ExerciseStats
+import com.gymbrosbro.app.domain.stats.ExerciseSummary
+import com.gymbrosbro.app.domain.units.UnitSystem
+import com.gymbrosbro.app.domain.units.Units
+import com.gymbrosbro.app.ui.components.PixelBarChart
+import com.gymbrosbro.app.ui.components.PixelLineChart
+import com.gymbrosbro.app.ui.format
+import com.gymbrosbro.app.ui.formatVolume
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import java.time.LocalDate
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -52,6 +72,7 @@ import kotlinx.coroutines.launch
 
 class ExerciseDetailViewModel(
     private val repository: ExerciseRepository,
+    settings: SettingsRepository,
     savedState: SavedStateHandle,
 ) : ViewModel() {
     private val id = savedState.toRoute<ExerciseDetailRoute>().exerciseId
@@ -59,8 +80,19 @@ class ExerciseDetailViewModel(
     val exercise: StateFlow<ExerciseEntity?> = repository.observeExercise(id)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    val history: StateFlow<List<ExercisePerformance>> = repository.observeHistory(id, limit = 5)
+    private val fullHistory = repository.observeHistory(id, limit = Int.MAX_VALUE)
+
+    /** The five most recent performances. */
+    val history: StateFlow<List<ExercisePerformance>> = fullHistory
+        .map { it.take(5) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Personal panel: bests, totals, records and charts (SPEC §7.1). */
+    val summary: StateFlow<ExerciseSummary?> = combine(exercise, fullHistory, settings.weekStart) { e, h, weekStart ->
+        e?.let { ExerciseStats.summarize(it, h, LocalDate.now(), weekStart) }
+    }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     fun toggleFavorite() {
         val current = exercise.value ?: return
@@ -81,8 +113,9 @@ fun ExerciseDetailScreen(
     onEdit: (String) -> Unit,
     onDuplicate: (String) -> Unit,
 ) {
-    val viewModel = appViewModel { c, s -> ExerciseDetailViewModel(c.exerciseRepository, s) }
+    val viewModel = appViewModel { c, s -> ExerciseDetailViewModel(c.exerciseRepository, c.settings, s) }
     val exercise by viewModel.exercise.collectAsStateWithLifecycle()
+    val summary by viewModel.summary.collectAsStateWithLifecycle()
     val history by viewModel.history.collectAsStateWithLifecycle()
     var confirmArchive by remember { mutableStateOf(false) }
     val units = LocalUnitSystem.current
@@ -149,6 +182,8 @@ fun ExerciseDetailScreen(
                     }
                 }
             }
+
+            summary?.takeIf { it.timesPerformed > 0 }?.let { PersonalPanels(e, it, units) }
 
             PixelPanel(Modifier.fillMaxWidth()) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -242,4 +277,140 @@ fun recommendationText(e: ExerciseEntity): String? {
             e.recommendedDurationSec?.let { "$setsLabel × ${SetFormat.duration(it)}" } ?: setsLabel
         TrackingType.WEIGHT_DISTANCE -> setsLabel
     }
+}
+
+/** Your numbers for this exercise: bests and totals, trend charts, record history. */
+@Composable
+private fun PersonalPanels(e: ExerciseEntity, summary: ExerciseSummary, units: UnitSystem) {
+    val type = e.trackingType
+    val weight = { kg: Double -> Units.formatWeight(kg, units) }
+    val rows = buildList {
+        when (type) {
+            TrackingType.WEIGHT_REPS -> {
+                summary.bestSet?.let { add("Best set" to SetFormat.summary(type, listOf(it), units)) }
+                summary.best(RecordType.BEST_E1RM)?.let { add("Est. 1-rep max*" to weight(it)) }
+                summary.best(RecordType.MAX_WEIGHT)?.let { add("Heaviest" to weight(it)) }
+                summary.maxReps?.let { add("Most reps" to it.toString()) }
+                add("Total reps" to "%,d".format(summary.totals.reps))
+                add("Total lifted" to formatVolume(summary.totals.volumeKg, units))
+            }
+            TrackingType.BODYWEIGHT_REPS -> {
+                summary.maxReps?.let { add("Most reps" to it.toString()) }
+                add("Total reps" to "%,d".format(summary.totals.reps))
+                if (summary.totals.volumeKg > 0) add("Total lifted" to formatVolume(summary.totals.volumeKg, units))
+            }
+            TrackingType.DURATION -> {
+                summary.best(RecordType.LONGEST_DURATION)?.let { add("Longest" to SetFormat.duration(it.toInt())) }
+                add("Total time" to SetFormat.duration(summary.totals.durationSec))
+            }
+            TrackingType.DISTANCE_DURATION -> {
+                summary.best(RecordType.LONGEST_DISTANCE)?.let { add("Farthest" to Units.formatDistance(it, units)) }
+                add("Total distance" to Units.formatDistance(summary.totals.distanceM, units))
+                if (summary.totals.durationSec > 0) add("Total time" to SetFormat.duration(summary.totals.durationSec))
+            }
+            TrackingType.WEIGHT_DISTANCE -> {
+                summary.best(RecordType.MAX_WEIGHT)?.let { add("Heaviest" to weight(it)) }
+                add("Total distance" to Units.formatDistance(summary.totals.distanceM, units))
+            }
+        }
+        add("Times done" to summary.timesPerformed.toString())
+        summary.lastPerformed?.let { add("Last done" to it.localDate().display()) }
+    }
+
+    PixelPanel(Modifier.fillMaxWidth(), border = GbbColors.Gold) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text("YOUR STATS", style = MaterialTheme.typography.titleLarge, color = GbbColors.Gold)
+            rows.forEach { (label, value) ->
+                Row {
+                    Text(label, style = MaterialTheme.typography.bodyMedium, color = GbbColors.Fog, modifier = Modifier.weight(1f))
+                    Text(value, style = MaterialTheme.typography.titleSmall, color = GbbColors.Chalk)
+                }
+            }
+            if (type == TrackingType.WEIGHT_REPS && summary.best(RecordType.BEST_E1RM) != null) {
+                Text(
+                    "*Estimated from your best set of 12 reps or fewer.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = GbbColors.Fog,
+                )
+            }
+        }
+    }
+
+    PixelPanel(Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("PROGRESS", style = MaterialTheme.typography.titleLarge, color = GbbColors.Cyan)
+            val progressRecord = Records.setTypes(type).first()
+            if (summary.progress.size < 2) {
+                Text("Log it twice to see a trend.", style = MaterialTheme.typography.bodyMedium, color = GbbColors.Fog)
+            } else {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Legend(progressChartLabel(type), GbbColors.Cyan)
+                    if (summary.e1rmProgress.isNotEmpty()) Legend("Est. 1RM", GbbColors.Purple)
+                }
+                PixelLineChart(
+                    points = summary.progress,
+                    secondary = summary.e1rmProgress,
+                    color = GbbColors.Cyan,
+                    formatValue = { progressRecord.format(it, units) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            if (summary.weekly.any { it.value > 0 }) {
+                Spacer(Modifier.height(4.dp))
+                Text(weeklyChartLabel(type), style = MaterialTheme.typography.labelMedium, color = GbbColors.Fog)
+                PixelBarChart(
+                    points = summary.weekly,
+                    color = GbbColors.Orange,
+                    formatValue = { weeklyFormat(type, it, units) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+    }
+
+    if (summary.records.events.isNotEmpty()) {
+        PixelPanel(Modifier.fillMaxWidth()) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("HIGH SCORES", style = MaterialTheme.typography.titleLarge, color = GbbColors.Cyan)
+                summary.records.events.asReversed().take(8).forEach { event ->
+                    Text(event.at.localDate().display(), style = MaterialTheme.typography.labelMedium, color = GbbColors.Fog)
+                    Text(
+                        "${event.type.label}: ${event.type.format(event.value, units)}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = GbbColors.Chalk,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun Legend(label: String, color: Color) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.size(10.dp).background(color))
+        Spacer(Modifier.width(6.dp))
+        Text(label, style = MaterialTheme.typography.labelMedium, color = GbbColors.Fog)
+    }
+}
+
+private fun progressChartLabel(type: TrackingType) = when (type) {
+    TrackingType.WEIGHT_REPS, TrackingType.WEIGHT_DISTANCE -> "Top weight"
+    TrackingType.BODYWEIGHT_REPS -> "Most reps"
+    TrackingType.DURATION -> "Longest"
+    TrackingType.DISTANCE_DURATION -> "Farthest"
+}
+
+private fun weeklyChartLabel(type: TrackingType) = when (type) {
+    TrackingType.WEIGHT_REPS -> "Weekly volume"
+    TrackingType.BODYWEIGHT_REPS -> "Weekly reps"
+    TrackingType.DURATION -> "Weekly time"
+    TrackingType.DISTANCE_DURATION, TrackingType.WEIGHT_DISTANCE -> "Weekly distance"
+}
+
+private fun weeklyFormat(type: TrackingType, value: Double, units: UnitSystem) = when (type) {
+    TrackingType.WEIGHT_REPS -> formatVolume(value, units)
+    TrackingType.BODYWEIGHT_REPS -> "${value.toInt()} reps"
+    TrackingType.DURATION -> SetFormat.duration(value.toInt())
+    TrackingType.DISTANCE_DURATION, TrackingType.WEIGHT_DISTANCE -> Units.formatDistance(value, units)
 }

@@ -40,3 +40,7 @@ enum class LoadClass { LIGHT, MEDIUM, HEAVY }
 enum class ExerciseSource { SEED, CUSTOM }
 
 enum class SessionStatus { IN_PROGRESS, COMPLETED }
+
+enum class ScheduleKind { WEEKLY, EVERY_N_DAYS, ONE_OFF }
+
+enum class ScheduleAction { SKIP, MOVE }

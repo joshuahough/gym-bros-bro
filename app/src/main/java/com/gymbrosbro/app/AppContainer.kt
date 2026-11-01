@@ -3,6 +3,8 @@ package com.gymbrosbro.app
 import android.content.Context
 import com.gymbrosbro.app.data.BodyweightRepository
 import com.gymbrosbro.app.data.ExerciseRepository
+import com.gymbrosbro.app.data.ProgressRepository
+import com.gymbrosbro.app.data.ScheduleRepository
 import com.gymbrosbro.app.data.SessionRepository
 import com.gymbrosbro.app.data.TemplateRepository
 import com.gymbrosbro.app.data.db.GymDatabase
@@ -24,5 +26,7 @@ class AppContainer(context: Context) {
     val templateRepository = TemplateRepository(database)
     val bodyweightRepository = BodyweightRepository(database.bodyweightDao())
     val sessionRepository = SessionRepository(database, templateRepository, bodyweightRepository)
+    val scheduleRepository = ScheduleRepository(database)
+    val progressRepository = ProgressRepository(sessionRepository, scheduleRepository, settings, appScope)
     val seedLoader = SeedLoader(context.assets, database, settings)
 }

@@ -16,6 +16,10 @@ interface TemplateDao {
     @Query("SELECT * FROM workout_template WHERE archivedAt IS NULL ORDER BY sortOrder, name COLLATE NOCASE")
     fun observeTemplates(): Flow<List<TemplateWithExercises>>
 
+    /** Including archived ones, for labeling old schedule rules and history. */
+    @Query("SELECT * FROM workout_template")
+    fun observeAll(): Flow<List<WorkoutTemplateEntity>>
+
     @Transaction
     @Query("SELECT * FROM workout_template WHERE id = :id")
     suspend fun getTemplateWithExercises(id: Long): TemplateWithExercises?

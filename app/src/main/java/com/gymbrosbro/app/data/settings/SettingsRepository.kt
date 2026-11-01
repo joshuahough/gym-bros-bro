@@ -11,6 +11,8 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.gymbrosbro.app.domain.units.UnitSystem
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import java.time.DayOfWeek
+import java.time.LocalTime
 
 val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
@@ -23,6 +25,23 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
     /** Keep the screen awake during a workout so it doesn't lock between sets. */
     val keepScreenOn: Flow<Boolean> = dataStore.data.map { it[KEEP_SCREEN_ON] ?: true }
 
+    /** First day of the week for the calendar, streaks and weekly stats. */
+    val weekStart: Flow<DayOfWeek> = dataStore.data.map { prefs ->
+        prefs[WEEK_START]?.let { runCatching { DayOfWeek.valueOf(it) }.getOrNull() } ?: DayOfWeek.MONDAY
+    }
+
+    /** Workouts per week for the weekly streak. */
+    val weeklyGoal: Flow<Int> = dataStore.data.map { it[WEEKLY_GOAL] ?: 3 }
+
+    val reminders: Flow<ReminderSettings> = dataStore.data.map { prefs ->
+        ReminderSettings(
+            enabled = prefs[REMINDERS_ENABLED] ?: false,
+            time = prefs[REMINDER_MINUTES]?.let { LocalTime.of(it / 60, it % 60) } ?: ReminderSettings.DEFAULT_TIME,
+            graceDay = prefs[GRACE_REMINDER] ?: false,
+            offered = prefs[REMINDER_OFFERED] ?: false,
+        )
+    }
+
     /** Version of the bundled exercise library last merged into the database. */
     val seedVersion: Flow<Int> = dataStore.data.map { it[SEED_VERSION] ?: 0 }
 
@@ -34,6 +53,34 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         dataStore.edit { it[KEEP_SCREEN_ON] = enabled }
     }
 
+    suspend fun setWeekStart(day: DayOfWeek) {
+        dataStore.edit { it[WEEK_START] = day.name }
+    }
+
+    suspend fun setWeeklyGoal(goal: Int) {
+        dataStore.edit { it[WEEKLY_GOAL] = goal }
+    }
+
+    suspend fun setRemindersEnabled(enabled: Boolean) {
+        dataStore.edit {
+            it[REMINDERS_ENABLED] = enabled
+            it[REMINDER_OFFERED] = true
+        }
+    }
+
+    suspend fun setReminderTime(time: LocalTime) {
+        dataStore.edit { it[REMINDER_MINUTES] = time.hour * 60 + time.minute }
+    }
+
+    suspend fun setGraceReminder(enabled: Boolean) {
+        dataStore.edit { it[GRACE_REMINDER] = enabled }
+    }
+
+    /** The one-time "want reminders?" offer was shown (SPEC §7.8). */
+    suspend fun setReminderOffered() {
+        dataStore.edit { it[REMINDER_OFFERED] = true }
+    }
+
     suspend fun setSeedVersion(version: Int) {
         dataStore.edit { it[SEED_VERSION] = version }
     }
@@ -42,5 +89,23 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val UNIT_SYSTEM = stringPreferencesKey("unit_system")
         val KEEP_SCREEN_ON = booleanPreferencesKey("keep_screen_on")
         val SEED_VERSION = intPreferencesKey("seed_version")
+        val WEEK_START = stringPreferencesKey("week_start")
+        val WEEKLY_GOAL = intPreferencesKey("weekly_goal")
+        val REMINDERS_ENABLED = booleanPreferencesKey("reminders_enabled")
+        val REMINDER_MINUTES = intPreferencesKey("reminder_minutes")
+        val GRACE_REMINDER = booleanPreferencesKey("grace_reminder")
+        val REMINDER_OFFERED = booleanPreferencesKey("reminder_offered")
+    }
+}
+
+/** Workout reminders: off by default, one a day at most (SPEC §7.8). */
+data class ReminderSettings(
+    val enabled: Boolean = false,
+    val time: LocalTime = DEFAULT_TIME,
+    val graceDay: Boolean = false,
+    val offered: Boolean = false,
+) {
+    companion object {
+        val DEFAULT_TIME: LocalTime = LocalTime.of(7, 0)
     }
 }

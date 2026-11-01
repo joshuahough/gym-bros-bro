@@ -28,9 +28,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
 import com.gymbrosbro.app.data.BodyweightRepository
+import com.gymbrosbro.app.data.ProgressRepository
 import com.gymbrosbro.app.data.SessionRepository
 import com.gymbrosbro.app.data.db.SessionWithExercises
 import com.gymbrosbro.app.data.db.entity.BodyweightEntryEntity
+import com.gymbrosbro.app.domain.records.ExerciseRecord
 import com.gymbrosbro.app.domain.session.SetFormat
 import com.gymbrosbro.app.domain.session.WorkoutMath
 import com.gymbrosbro.app.domain.units.Units
@@ -40,13 +42,16 @@ import com.gymbrosbro.app.ui.components.NumberInputDialog
 import com.gymbrosbro.app.ui.components.PixelButton
 import com.gymbrosbro.app.ui.components.PixelPanel
 import com.gymbrosbro.app.ui.components.StatTile
+import com.gymbrosbro.app.ui.format
 import com.gymbrosbro.app.ui.formatVolume
+import com.gymbrosbro.app.ui.label
 import com.gymbrosbro.app.ui.navigation.SessionSummaryRoute
 import com.gymbrosbro.app.ui.theme.GbbColors
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Duration
@@ -56,9 +61,15 @@ import java.time.temporal.ChronoUnit
 class SessionSummaryViewModel(
     private val sessions: SessionRepository,
     private val bodyweight: BodyweightRepository,
+    progress: ProgressRepository,
     savedState: SavedStateHandle,
 ) : ViewModel() {
     private val sessionId = savedState.toRoute<SessionSummaryRoute>().sessionId
+
+    /** Records set in this workout, including whole-workout ones like volume. */
+    val records: StateFlow<List<ExerciseRecord>> = progress.records
+        .map { all -> all.filter { it.event.sessionId == sessionId } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val session: StateFlow<SessionWithExercises?> = sessions.observeSession(sessionId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
@@ -97,7 +108,10 @@ class SessionSummaryViewModel(
 /** Shown right after finishing (SPEC §7.3, "STAGE CLEAR"). */
 @Composable
 fun SessionSummaryScreen(onDone: () -> Unit) {
-    val viewModel = appViewModel { c, s -> SessionSummaryViewModel(c.sessionRepository, c.bodyweightRepository, s) }
+    val viewModel = appViewModel { c, s ->
+        SessionSummaryViewModel(c.sessionRepository, c.bodyweightRepository, c.progressRepository, s)
+    }
+    val records by viewModel.records.collectAsStateWithLifecycle()
     val detail by viewModel.session.collectAsStateWithLifecycle()
     val latestBodyweight by viewModel.latestBodyweight.collectAsStateWithLifecycle()
     val canUpdateTemplate by viewModel.canUpdateTemplate.collectAsStateWithLifecycle()
@@ -136,6 +150,26 @@ fun SessionSummaryScreen(onDone: () -> Unit) {
                     StatTile("DISTANCE", Units.formatDistance(totals.distanceM, units), GbbColors.Orange, Modifier.weight(1f))
                 } else {
                     StatTile("LIFTED", formatVolume(totals.volumeKg, units), GbbColors.Orange, Modifier.weight(1f))
+                }
+            }
+
+            if (records.isNotEmpty()) {
+                PixelPanel(Modifier.fillMaxWidth(), border = GbbColors.Gold) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            if (records.size == 1) "NEW HIGH SCORE!" else "${records.size} NEW HIGH SCORES!",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = GbbColors.Gold,
+                        )
+                        records.forEach { r ->
+                            Text(r.exercise.name, style = MaterialTheme.typography.titleSmall, color = GbbColors.Chalk)
+                            Text(
+                                "${r.event.type.label}: ${r.event.type.format(r.event.value, units)}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = GbbColors.Green,
+                            )
+                        }
+                    }
                 }
             }
 

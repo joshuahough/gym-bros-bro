@@ -30,7 +30,7 @@ fun MeScreen(onOpenHistory: () -> Unit, onOpenSettings: () -> Unit) {
     ) {
         ScreenHeader("ME")
         MenuPanel("HISTORY", "Every workout you've logged. Tap one to fix a set or change the date.", onOpenHistory)
-        MenuPanel("SETTINGS", "Units (lb / kg), bodyweight and screen-awake.", onOpenSettings)
+        MenuPanel("SETTINGS", "Units (lb / kg), bodyweight, reminders and week start.", onOpenSettings)
         ComingSoonPanel("LOCKER", "Customize your bro and show off the gear you've unlocked.", Modifier.fillMaxWidth())
     }
 }

@@ -23,15 +23,18 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import com.gymbrosbro.app.data.BodyweightRepository
 import com.gymbrosbro.app.data.db.entity.BodyweightEntryEntity
+import com.gymbrosbro.app.data.settings.ReminderSettings
 import com.gymbrosbro.app.data.settings.SettingsRepository
 import com.gymbrosbro.app.domain.units.UnitSystem
 import com.gymbrosbro.app.domain.units.Units
+import com.gymbrosbro.app.notifications.rememberNotificationPermission
 import com.gymbrosbro.app.ui.LocalUnitSystem
 import com.gymbrosbro.app.ui.appViewModel
 import com.gymbrosbro.app.ui.components.NumberInputDialog
 import com.gymbrosbro.app.ui.components.PixelButton
 import com.gymbrosbro.app.ui.components.PixelChip
 import com.gymbrosbro.app.ui.components.PixelPanel
+import com.gymbrosbro.app.ui.components.PixelTimePickerDialog
 import com.gymbrosbro.app.ui.components.PixelTopBar
 import com.gymbrosbro.app.ui.display
 import com.gymbrosbro.app.ui.theme.GbbColors
@@ -39,6 +42,12 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.DayOfWeek
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+
+private val timeFormat = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
 
 class SettingsViewModel(
     private val settings: SettingsRepository,
@@ -50,9 +59,19 @@ class SettingsViewModel(
     val latestBodyweight: StateFlow<BodyweightEntryEntity?> = bodyweight.observeLatest()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    val weekStart: StateFlow<DayOfWeek> = settings.weekStart
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DayOfWeek.MONDAY)
+
+    val reminders: StateFlow<ReminderSettings> = settings.reminders
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ReminderSettings())
+
     fun setUnits(system: UnitSystem) = viewModelScope.launch { settings.setUnitSystem(system) }
     fun setKeepScreenOn(enabled: Boolean) = viewModelScope.launch { settings.setKeepScreenOn(enabled) }
     fun recordBodyweight(weightKg: Double) = viewModelScope.launch { bodyweight.record(weightKg) }
+    fun setWeekStart(day: DayOfWeek) = viewModelScope.launch { settings.setWeekStart(day) }
+    fun setReminders(enabled: Boolean) = viewModelScope.launch { settings.setRemindersEnabled(enabled) }
+    fun setReminderTime(time: LocalTime) = viewModelScope.launch { settings.setReminderTime(time) }
+    fun setGraceReminder(enabled: Boolean) = viewModelScope.launch { settings.setGraceReminder(enabled) }
 }
 
 @Composable
@@ -60,7 +79,11 @@ fun SettingsScreen(onBack: () -> Unit) {
     val viewModel = appViewModel { c, _ -> SettingsViewModel(c.settings, c.bodyweightRepository) }
     val keepScreenOn by viewModel.keepScreenOn.collectAsStateWithLifecycle()
     val latest by viewModel.latestBodyweight.collectAsStateWithLifecycle()
+    val weekStart by viewModel.weekStart.collectAsStateWithLifecycle()
+    val reminders by viewModel.reminders.collectAsStateWithLifecycle()
     var editBodyweight by remember { mutableStateOf(false) }
+    var editReminderTime by remember { mutableStateOf(false) }
+    val enableReminders = rememberNotificationPermission { granted -> if (granted) viewModel.setReminders(true) }
     val units = LocalUnitSystem.current
 
     Column(Modifier.fillMaxSize()) {
@@ -90,6 +113,41 @@ fun SettingsScreen(onBack: () -> Unit) {
                     PixelButton("UPDATE", onClick = { editBodyweight = true }, small = true)
                 }
             }
+            SettingPanel(
+                "REMINDERS",
+                "One notification on days you have a workout planned, and none once you've trained. Off by default.",
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PixelChip("On", reminders.enabled, { enableReminders() })
+                    PixelChip("Off", !reminders.enabled, { viewModel.setReminders(false) })
+                }
+                if (reminders.enabled) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            reminders.time.format(timeFormat),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = GbbColors.Chalk,
+                            modifier = Modifier.weight(1f),
+                        )
+                        PixelButton("CHANGE", onClick = { editReminderTime = true }, small = true)
+                    }
+                    Text(
+                        "Grace-day reminder: the day after a missed workout, if training that day would save your COMBO.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = GbbColors.Fog,
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        PixelChip("On", reminders.graceDay, { viewModel.setGraceReminder(true) })
+                        PixelChip("Off", !reminders.graceDay, { viewModel.setGraceReminder(false) })
+                    }
+                }
+            }
+            SettingPanel("WEEK STARTS ON", "For the calendar, weekly streak and weekly stats.") {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PixelChip("Monday", weekStart == DayOfWeek.MONDAY, { viewModel.setWeekStart(DayOfWeek.MONDAY) })
+                    PixelChip("Sunday", weekStart == DayOfWeek.SUNDAY, { viewModel.setWeekStart(DayOfWeek.SUNDAY) })
+                }
+            }
             SettingPanel("KEEP SCREEN AWAKE", "Stops the screen locking during a workout.") {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     PixelChip("On", keepScreenOn, { viewModel.setKeepScreenOn(true) })
@@ -97,6 +155,18 @@ fun SettingsScreen(onBack: () -> Unit) {
                 }
             }
         }
+    }
+
+    if (editReminderTime) {
+        PixelTimePickerDialog(
+            title = "REMINDER TIME",
+            initial = reminders.time,
+            onConfirm = {
+                viewModel.setReminderTime(it)
+                editReminderTime = false
+            },
+            onDismiss = { editReminderTime = false },
+        )
     }
 
     if (editBodyweight) {

@@ -12,6 +12,12 @@ import com.gymbrosbro.app.data.db.entity.WorkoutSessionEntity
 import com.gymbrosbro.app.data.settings.SettingsRepository
 import com.gymbrosbro.app.domain.model.SessionStatus
 import com.gymbrosbro.app.domain.model.TrackingType
+import com.gymbrosbro.app.domain.records.Performance
+import com.gymbrosbro.app.domain.records.RecordHit
+import com.gymbrosbro.app.domain.records.RecordType
+import com.gymbrosbro.app.domain.records.Records
+import com.gymbrosbro.app.domain.session.Overload
+import com.gymbrosbro.app.domain.session.Suggestion
 import com.gymbrosbro.app.domain.session.WorkoutMath
 import com.gymbrosbro.app.domain.session.WorkoutTotals
 import com.gymbrosbro.app.ui.navigation.SessionRoute
@@ -19,6 +25,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -33,7 +40,15 @@ data class ExerciseBlock(
     val sets: List<SetEntryEntity>,
     /** Completed sets from the previous time this exercise was done; empty when editing history. */
     val lastTime: List<SetEntryEntity>,
+    /** Overload chips (SPEC §8); empty when editing history or with nothing left to fill. */
+    val suggestions: List<Suggestion> = emptyList(),
 )
+
+/** What earlier workouts say about one exercise: last time's sets and the records to beat. */
+private data class ExerciseContext(val lastTime: List<SetEntryEntity>, val bests: Map<RecordType, Double>)
+
+/** The NEW HIGH SCORE pop-up. */
+data class HighScore(val exercise: ExerciseEntity, val hits: List<RecordHit>)
 
 data class SessionUiState(
     val session: WorkoutSessionEntity,
@@ -57,27 +72,50 @@ class SessionViewModel(
     private val detail = sessions.observeSession(sessionId)
     private val bodyweightPromptDismissed = MutableStateFlow(false)
 
-    /** "Last time" sets, re-fetched only when the set of exercises changes. */
-    private val lastTimes = detail
+    /** Last time + records to beat, re-fetched only when the set of exercises changes. Live workouts only. */
+    private val contexts = detail
         .map { d ->
-            if (d == null || d.session.status == SessionStatus.COMPLETED) emptySet()
-            else d.exercises.map { it.exercise.id }.toSet()
+            if (d == null || d.session.status == SessionStatus.COMPLETED) null
+            else d.session to d.exercises.map { it.exercise }.distinctBy { it.id }
         }
         .distinctUntilChanged()
-        .map { ids -> ids.associateWith { sessions.lastSets(it, excludeSessionId = sessionId) } }
+        .map { pair ->
+            val (session, exercises) = pair ?: return@map emptyMap()
+            exercises.associate { exercise ->
+                val prior = sessions.priorPerformances(exercise.id, session)
+                val bests = Records.history(
+                    exercise.trackingType,
+                    prior.map { Performance(it.session.id, it.session.startedAt, it.sets) },
+                ).bests.mapValues { it.value.value }
+                exercise.id to ExerciseContext(prior.firstOrNull()?.sortedSets.orEmpty(), bests)
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+
+    private val _highScore = MutableStateFlow<HighScore?>(null)
+    val highScore: StateFlow<HighScore?> = _highScore.asStateFlow()
 
     val keepScreenOn: StateFlow<Boolean> = settings.keepScreenOn
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     val state: StateFlow<SessionUiState?> = combine(
         detail,
-        lastTimes,
+        contexts,
         bodyweight.observeLatest(),
         bodyweightPromptDismissed,
-    ) { d, last, latestBodyweight, dismissed ->
+        settings.unitSystem,
+    ) { d, contexts, latestBodyweight, dismissed, units ->
         d ?: return@combine null
         val blocks = d.sortedExercises.map { se ->
-            ExerciseBlock(se.sessionExercise.id, se.exercise, se.sortedSets, last[se.exercise.id].orEmpty())
+            val last = contexts[se.exercise.id]?.lastTime.orEmpty()
+            val open = se.sets.any { !it.isCompleted && !it.isWarmup }
+            ExerciseBlock(
+                sessionExerciseId = se.sessionExercise.id,
+                exercise = se.exercise,
+                sets = se.sortedSets,
+                lastTime = last,
+                suggestions = if (open) Overload.suggest(se.exercise, last, units) else emptyList(),
+            )
         }
         val bw = d.session.bodyweightKgSnapshot ?: latestBodyweight?.weightKg
         SessionUiState(
@@ -99,16 +137,32 @@ class SessionViewModel(
 
     fun updateSet(setId: Long, transform: (SetEntryEntity) -> SetEntryEntity) = launch { sessions.updateSet(setId, transform) }
 
-    fun toggleComplete(setId: Long, type: TrackingType) = launch {
-        sessions.updateSet(setId) { s ->
+    fun toggleComplete(setId: Long, exercise: ExerciseEntity) = launch {
+        val updated = sessions.updateSet(setId) { s ->
             when {
                 s.isCompleted -> s.copy(isCompleted = false, completedAt = null)
-                WorkoutMath.canComplete(type, s) -> s.copy(isCompleted = true, completedAt = Instant.now())
+                WorkoutMath.canComplete(exercise.trackingType, s) -> s.copy(isCompleted = true, completedAt = Instant.now())
                 else -> s
             }
-        }
+        } ?: return@launch
         sessions.carryForward(setId)
+        checkHighScore(updated, exercise)
     }
+
+    /** NEW HIGH SCORE when a just-checked set beats every earlier workout and every earlier set today. */
+    private suspend fun checkHighScore(set: SetEntryEntity, exercise: ExerciseEntity) {
+        if (!set.isCompleted || state.value?.isCompleted != false) return
+        val bests = contexts.value[exercise.id]?.bests ?: return
+        val hits = Records.brokenBy(exercise.trackingType, set, bests, sessions.getSets(set.sessionExerciseId))
+        if (hits.isNotEmpty()) _highScore.value = HighScore(exercise, hits)
+    }
+
+    fun dismissHighScore() {
+        _highScore.value = null
+    }
+
+    fun applySuggestion(sessionExerciseId: Long, suggestion: Suggestion) =
+        launch { sessions.applyDrafts(sessionExerciseId, suggestion.sets) }
 
     fun toggleWarmup(setId: Long) = updateSet(setId) { it.copy(isWarmup = !it.isWarmup) }
 

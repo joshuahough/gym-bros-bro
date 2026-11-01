@@ -133,21 +133,25 @@ SetEntry          id, sessionExerciseId, position, isWarmup, isCompleted,
 ### 4.5 Records, progress, schedule, profile
 
 ```
-PersonalRecord    id, exerciseId, type, value, setEntryId, achievedAt
-                  (types: MAX_WEIGHT, MAX_REPS, BEST_E1RM, MAX_SESSION_VOLUME,
-                   LONGEST_DURATION, LONGEST_DISTANCE)
-ScheduleRule      id, templateId, kind (WEEKLY | EVERY_N_DAYS | ONE_OFF),
-                  daysOfWeek (bitmask)?, intervalDays?, anchorDate?, date?, active
+ScheduleRule      id, templateId? (null = any workout), kind (WEEKLY | EVERY_N_DAYS | ONE_OFF),
+                  daysOfWeek (bitmask), intervalDays?, startDate, endDate?, createdAt
 ScheduleException ruleId, originalDate, action (MOVE | SKIP), newDate?
-SchedulePause     startDate, endDate, reason?           vacation / sick, freezes streaks
+SchedulePause     startDate, endDate                    vacation / sick, freezes streaks
 BodyweightEntry   date, weightKg
 UnlockedItem      itemId, unlockedAt                    permanent once earned
 EarnedAchievement achievementId, earnedAt               permanent once earned
-StreakFreeze      earnedAt, usedOnDate?
 AvatarConfig      bodyBase, skinTone, hairStyle, hairColor, headwear, top, bottom, shoes, accessory
 ```
 
-**Derived, not stored:** totals, per-exercise stats, current streaks and XP are all calculated from history. Editing or deleting an old workout corrects everything automatically. **Unlocks and achievements are kept permanently**: once you earn something, an edit never takes it away. PR rows are recalculated for an exercise whenever its history changes.
+**Derived, not stored:** totals, per-exercise stats, personal records, streaks, streak freezes and XP are all calculated from history. Editing or deleting an old workout corrects everything automatically. **Unlocks and achievements are kept permanently**: once you earn something, an edit never takes it away.
+
+- **Personal records** by tracking type:
+  - Weight × reps: heaviest weight and best e1RM per set; most volume per workout.
+  - Bodyweight: most reps per set and per workout.
+  - Time: longest. Distance: farthest. Weight × distance: heaviest.
+  - The first time you do an exercise sets the baseline and isn't celebrated, and ties don't count.
+  - Per-set records pop NEW HIGH SCORE as you log; per-workout ones show on the finish screen.
+- **Schedule rules are never edited in place** once they have past days. Removing one ends it yesterday, so past occurrences and the streaks built on them stay put. A rule that hasn't started yet is simply deleted.
 
 ### 4.6 Settings (DataStore)
 
@@ -254,7 +258,7 @@ Custom calisthenics exercises can set their own factor.
 
 ### 7.8 Reminders
 - **Off by default.** You're offered them once, when you create your first schedule.
-- At most **one notification per scheduled occurrence**, at a time you choose. No reminder fires if you've already logged a workout that day. Tapping it opens the session for that workout.
+- At most **one notification per scheduled occurrence**, at a time you choose. No reminder fires if you've already logged a workout that day. Tapping it opens Home, where PRESS START starts today's workout. It's a daily inexact alarm (no exact-alarm permission), so it can land up to about an hour after the chosen time.
 - **Grace-day reminder** (a separate toggle, off by default): on the grace day after a missed workout, one notification at your reminder time: "Missed Monday — train today to keep your COMBO."
 - No other notification types exist, and the app never sends more than one notification a day.
 - Requires `POST_NOTIFICATIONS` (Android 13+) and `RECEIVE_BOOT_COMPLETED`.
@@ -351,7 +355,7 @@ Turning monetization on is reported to be hard or impossible to reverse for an a
 |---|---|---|
 | **0. Foundation** ✅ | Android Studio project, git, version catalog, theme (palette, fonts, pixel components), 5-tab nav skeleton, Room setup, sprite renderer, seed pipeline + `exercises.json` | Themed app with empty tabs installs on the owner's phone |
 | **1. Core loop** ✅ | Library (browse/search/filter/detail), custom exercises, templates, session logging with pre-fill and resume, basic finish screen, history with edit/delete, settings (units, bodyweight) | The owner runs real workouts on it |
-| **2. Feedback** | PR detection + NEW HIGH SCORE, overload suggestions, Stats, per-exercise stats and charts, schedule + calendar, both streaks + freezes + pause, reminders | Calendar shows the weekly plan, streaks and stats are accurate |
+| **2. Feedback** ✅ | PR detection + NEW HIGH SCORE, overload suggestions, Stats, per-exercise stats and charts, schedule + calendar, both streaks + freezes + pause, reminders | Calendar shows the weekly plan, streaks and stats are accurate |
 | **3. Fun layer** | XP/levels, achievements, avatar + locker + unlocks, all 15 muscle icons, sound effects and haptics | Workouts earn XP and unlock outfits |
 | **4. Ship** | Onboarding, export/import, Auto Backup check, accessibility and polish pass, Supporter Pack + billing, privacy policy, Data Safety form, store listing and screenshots, closed test (12+ testers × 14 days), production release | Live on Google Play |
 

@@ -32,6 +32,7 @@ import com.gymbrosbro.app.ui.navigation.HistoryRoute
 import com.gymbrosbro.app.ui.navigation.HomeRoute
 import com.gymbrosbro.app.ui.navigation.MeRoute
 import com.gymbrosbro.app.ui.navigation.PICKED_EXERCISES_KEY
+import com.gymbrosbro.app.ui.navigation.ScheduleRoute
 import com.gymbrosbro.app.ui.navigation.SessionRoute
 import com.gymbrosbro.app.ui.navigation.SessionSummaryRoute
 import com.gymbrosbro.app.ui.navigation.SettingsRoute
@@ -40,6 +41,7 @@ import com.gymbrosbro.app.ui.navigation.TemplateEditorRoute
 import com.gymbrosbro.app.ui.navigation.TopLevelDestination
 import com.gymbrosbro.app.ui.navigation.TrainRoute
 import com.gymbrosbro.app.ui.screens.calendar.CalendarScreen
+import com.gymbrosbro.app.ui.screens.calendar.ScheduleScreen
 import com.gymbrosbro.app.ui.screens.history.HistoryScreen
 import com.gymbrosbro.app.ui.screens.home.HomeScreen
 import com.gymbrosbro.app.ui.screens.library.ExerciseDetailScreen
@@ -97,7 +99,7 @@ fun AppRoot() {
                 composable<HomeRoute> {
                     HomeScreen(
                         onPressStart = { navController.navigateToTab(TopLevelDestination.TRAIN) },
-                        onResume = { navController.navigate(SessionRoute(it)) },
+                        onOpenSession = { navController.navigate(SessionRoute(it)) },
                     )
                 }
                 composable<TrainRoute> {
@@ -109,8 +111,15 @@ fun AppRoot() {
                         onNewCustomExercise = { navController.navigate(ExerciseEditorRoute()) },
                     )
                 }
-                composable<CalendarRoute> { CalendarScreen() }
-                composable<StatsRoute> { StatsScreen() }
+                composable<CalendarRoute> {
+                    CalendarScreen(
+                        onOpenSession = { navController.navigate(SessionRoute(it)) },
+                        onEditSchedule = { navController.navigate(ScheduleRoute) },
+                    )
+                }
+                composable<StatsRoute> {
+                    StatsScreen(onOpenExercise = { navController.navigate(ExerciseDetailRoute(it)) })
+                }
                 composable<MeRoute> {
                     MeScreen(
                         onOpenHistory = { navController.navigate(HistoryRoute) },
@@ -179,6 +188,7 @@ fun AppRoot() {
                     )
                 }
                 composable<SettingsRoute> { SettingsScreen(onBack = navController::popBackStack) }
+                composable<ScheduleRoute> { ScheduleScreen(onBack = navController::popBackStack) }
             }
         }
     }
