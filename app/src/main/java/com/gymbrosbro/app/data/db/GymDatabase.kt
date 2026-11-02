@@ -7,6 +7,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.gymbrosbro.app.data.db.entity.BodyweightEntryEntity
+import com.gymbrosbro.app.data.db.entity.EarnedTrophyEntity
 import com.gymbrosbro.app.data.db.entity.ExerciseEntity
 import com.gymbrosbro.app.data.db.entity.ScheduleExceptionEntity
 import com.gymbrosbro.app.data.db.entity.SchedulePauseEntity
@@ -14,6 +15,7 @@ import com.gymbrosbro.app.data.db.entity.ScheduleRuleEntity
 import com.gymbrosbro.app.data.db.entity.SessionExerciseEntity
 import com.gymbrosbro.app.data.db.entity.SetEntryEntity
 import com.gymbrosbro.app.data.db.entity.TemplateExerciseEntity
+import com.gymbrosbro.app.data.db.entity.UnlockedItemEntity
 import com.gymbrosbro.app.data.db.entity.WorkoutSessionEntity
 import com.gymbrosbro.app.data.db.entity.WorkoutTemplateEntity
 
@@ -29,12 +31,16 @@ import com.gymbrosbro.app.data.db.entity.WorkoutTemplateEntity
         ScheduleRuleEntity::class,
         ScheduleExceptionEntity::class,
         SchedulePauseEntity::class,
+        EarnedTrophyEntity::class,
+        UnlockedItemEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
     autoMigrations = [
         // 2: schedule tables.
         AutoMigration(from = 1, to = 2),
+        // 3: trophies and locker unlocks.
+        AutoMigration(from = 2, to = 3),
     ],
 )
 @TypeConverters(Converters::class)
@@ -44,6 +50,7 @@ abstract class GymDatabase : RoomDatabase() {
     abstract fun sessionDao(): SessionDao
     abstract fun bodyweightDao(): BodyweightDao
     abstract fun scheduleDao(): ScheduleDao
+    abstract fun awardsDao(): AwardsDao
 
     companion object {
         fun build(context: Context): GymDatabase =

@@ -27,6 +27,8 @@ import kotlinx.serialization.Serializable
 @Serializable data object HistoryRoute
 @Serializable data object SettingsRoute
 @Serializable data object ScheduleRoute
+@Serializable data object LockerRoute
+@Serializable data object TrophiesRoute
 
 /** SavedStateHandle key the exercise picker writes its result to. */
 const val PICKED_EXERCISES_KEY = "picked_exercises"

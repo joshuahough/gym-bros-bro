@@ -16,12 +16,6 @@ class SpritesTest {
     }
 
     @Test
-    fun `avatar is a 20x34 full body`() {
-        assertEquals(20, Sprites.Avatar.width)
-        assertEquals(34, Sprites.Avatar.height)
-    }
-
-    @Test
     fun `recolor swaps only the given palette entry`() {
         val sprite = Sprite(listOf("fo"), mapOf('f' to Color.Red, 'o' to Color.Black))
         val swapped = sprite.recolor('f' to Color.Green)

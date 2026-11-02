@@ -1,6 +1,8 @@
 package com.gymbrosbro.app.ui.screens.home
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,21 +18,27 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
+import com.gymbrosbro.app.avatar.AvatarConfig
+import com.gymbrosbro.app.data.AwardsRepository
 import com.gymbrosbro.app.data.ProgressRepository
 import com.gymbrosbro.app.data.ScheduleRepository
 import com.gymbrosbro.app.data.SessionRepository
 import com.gymbrosbro.app.data.StreakSummary
 import com.gymbrosbro.app.data.TemplateRepository
 import com.gymbrosbro.app.data.db.entity.WorkoutSessionEntity
+import com.gymbrosbro.app.domain.progress.Level
+import com.gymbrosbro.app.domain.progress.Trophies
+import com.gymbrosbro.app.domain.progress.Xp
 import com.gymbrosbro.app.domain.schedule.Schedule
-import com.gymbrosbro.app.sprites.SpriteImage
-import com.gymbrosbro.app.sprites.Sprites
 import com.gymbrosbro.app.ui.appViewModel
+import com.gymbrosbro.app.ui.components.AvatarView
+import com.gymbrosbro.app.ui.components.LevelBar
 import com.gymbrosbro.app.ui.components.PixelButton
 import com.gymbrosbro.app.ui.components.PixelPanel
 import com.gymbrosbro.app.ui.components.StatTile
@@ -43,6 +51,7 @@ import com.gymbrosbro.app.ui.theme.GbbColors
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import java.time.LocalDate
 import java.time.format.TextStyle
@@ -61,7 +70,17 @@ class HomeViewModel(
     schedule: ScheduleRepository,
     templates: TemplateRepository,
     progress: ProgressRepository,
+    awards: AwardsRepository,
 ) : ViewModel() {
+    val avatar: StateFlow<AvatarConfig?> = awards.avatar
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    val level: StateFlow<Level> = progress.xp.map { it.level }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Xp.level(0))
+
+    val trophies: StateFlow<Int> = awards.trophies.map { it.size }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
     val inProgress: StateFlow<WorkoutSessionEntity?> = sessions.observeInProgress()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
@@ -85,9 +104,11 @@ class HomeViewModel(
 }
 
 @Composable
-fun HomeScreen(onPressStart: () -> Unit, onOpenSession: (Long) -> Unit) {
+fun HomeScreen(onPressStart: () -> Unit, onOpenSession: (Long) -> Unit, onOpenLocker: () -> Unit) {
     val viewModel = appViewModel { c, _ ->
-        HomeViewModel(c.sessionRepository, c.scheduleRepository, c.templateRepository, c.progressRepository)
+        HomeViewModel(
+            c.sessionRepository, c.scheduleRepository, c.templateRepository, c.progressRepository, c.awardsRepository,
+        )
     }
     val workouts = appViewModel { c, _ -> WorkoutsViewModel(c.templateRepository, c.sessionRepository) }
     val starter = rememberStartWorkoutController(workouts, onOpenSession)
@@ -95,6 +116,9 @@ fun HomeScreen(onPressStart: () -> Unit, onOpenSession: (Long) -> Unit) {
     val lastWorkout by viewModel.lastWorkout.collectAsStateWithLifecycle()
     val streaks by viewModel.streaks.collectAsStateWithLifecycle()
     val today by viewModel.today.collectAsStateWithLifecycle()
+    val avatar by viewModel.avatar.collectAsStateWithLifecycle()
+    val level by viewModel.level.collectAsStateWithLifecycle()
+    val trophies by viewModel.trophies.collectAsStateWithLifecycle()
 
     Column(
         modifier = Modifier
@@ -117,18 +141,19 @@ fun HomeScreen(onPressStart: () -> Unit, onOpenSession: (Long) -> Unit) {
             color = GbbColors.Fog,
         )
 
-        PixelPanel(Modifier.fillMaxWidth()) {
+        PixelPanel(Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = "Open locker", onClick = onOpenLocker)) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                SpriteImage(
-                    sprite = Sprites.Avatar,
-                    contentDescription = "Your avatar",
-                    size = 136.dp,
-                )
+                // Blank until loaded, so the default outfit doesn't flash first.
+                Box(Modifier.height(148.dp)) {
+                    avatar?.let { AvatarView(it, 148.dp) }
+                }
                 Spacer(Modifier.height(12.dp))
                 Text("PLAYER 1", style = MaterialTheme.typography.titleLarge, color = GbbColors.Chalk)
+                Spacer(Modifier.height(12.dp))
+                LevelBar(level, Modifier.fillMaxWidth())
             }
         }
 
@@ -206,7 +231,7 @@ fun HomeScreen(onPressStart: () -> Unit, onOpenSession: (Long) -> Unit) {
                 GbbColors.Pink,
                 Modifier.weight(1f),
             )
-            StatTile("LEVEL", "1", GbbColors.Green, Modifier.weight(1f))
+            StatTile("TROPHIES", "$trophies/${Trophies.all.size}", GbbColors.Gold, Modifier.weight(1f))
         }
     }
 

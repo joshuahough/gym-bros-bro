@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.gymbrosbro.app.data.AwardsRepository
 import com.gymbrosbro.app.data.BodyweightRepository
 import com.gymbrosbro.app.data.SessionRepository
 import com.gymbrosbro.app.data.db.entity.ExerciseEntity
@@ -20,6 +21,8 @@ import com.gymbrosbro.app.domain.session.Overload
 import com.gymbrosbro.app.domain.session.Suggestion
 import com.gymbrosbro.app.domain.session.WorkoutMath
 import com.gymbrosbro.app.domain.session.WorkoutTotals
+import com.gymbrosbro.app.feedback.Cue
+import com.gymbrosbro.app.feedback.Feedback
 import com.gymbrosbro.app.ui.navigation.SessionRoute
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -64,6 +67,8 @@ class SessionViewModel(
     private val sessions: SessionRepository,
     private val bodyweight: BodyweightRepository,
     settings: SettingsRepository,
+    private val awards: AwardsRepository,
+    private val feedback: Feedback,
     private val appScope: CoroutineScope,
     savedState: SavedStateHandle,
 ) : ViewModel() {
@@ -146,15 +151,18 @@ class SessionViewModel(
             }
         } ?: return@launch
         sessions.carryForward(setId)
-        checkHighScore(updated, exercise)
+        if (!checkHighScore(updated, exercise) && updated.isCompleted) feedback.play(Cue.SET_DONE)
     }
 
     /** NEW HIGH SCORE when a just-checked set beats every earlier workout and every earlier set today. */
-    private suspend fun checkHighScore(set: SetEntryEntity, exercise: ExerciseEntity) {
-        if (!set.isCompleted || state.value?.isCompleted != false) return
-        val bests = contexts.value[exercise.id]?.bests ?: return
+    private suspend fun checkHighScore(set: SetEntryEntity, exercise: ExerciseEntity): Boolean {
+        if (!set.isCompleted || state.value?.isCompleted != false) return false
+        val bests = contexts.value[exercise.id]?.bests ?: return false
         val hits = Records.brokenBy(exercise.trackingType, set, bests, sessions.getSets(set.sessionExerciseId))
-        if (hits.isNotEmpty()) _highScore.value = HighScore(exercise, hits)
+        if (hits.isEmpty()) return false
+        _highScore.value = HighScore(exercise, hits)
+        feedback.play(Cue.HIGH_SCORE)
+        return true
     }
 
     fun dismissHighScore() {
@@ -193,6 +201,7 @@ class SessionViewModel(
 
     fun finish(onDone: () -> Unit) = launch {
         sessions.finish(sessionId)
+        awards.sync(sessionId)
         onDone()
     }
 

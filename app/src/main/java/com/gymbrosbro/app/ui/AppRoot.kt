@@ -30,6 +30,7 @@ import com.gymbrosbro.app.ui.navigation.ExerciseEditorRoute
 import com.gymbrosbro.app.ui.navigation.ExercisePickerRoute
 import com.gymbrosbro.app.ui.navigation.HistoryRoute
 import com.gymbrosbro.app.ui.navigation.HomeRoute
+import com.gymbrosbro.app.ui.navigation.LockerRoute
 import com.gymbrosbro.app.ui.navigation.MeRoute
 import com.gymbrosbro.app.ui.navigation.PICKED_EXERCISES_KEY
 import com.gymbrosbro.app.ui.navigation.ScheduleRoute
@@ -40,6 +41,7 @@ import com.gymbrosbro.app.ui.navigation.StatsRoute
 import com.gymbrosbro.app.ui.navigation.TemplateEditorRoute
 import com.gymbrosbro.app.ui.navigation.TopLevelDestination
 import com.gymbrosbro.app.ui.navigation.TrainRoute
+import com.gymbrosbro.app.ui.navigation.TrophiesRoute
 import com.gymbrosbro.app.ui.screens.calendar.CalendarScreen
 import com.gymbrosbro.app.ui.screens.calendar.ScheduleScreen
 import com.gymbrosbro.app.ui.screens.history.HistoryScreen
@@ -47,7 +49,9 @@ import com.gymbrosbro.app.ui.screens.home.HomeScreen
 import com.gymbrosbro.app.ui.screens.library.ExerciseDetailScreen
 import com.gymbrosbro.app.ui.screens.library.ExerciseEditorScreen
 import com.gymbrosbro.app.ui.screens.library.ExercisePickerScreen
+import com.gymbrosbro.app.ui.screens.me.LockerScreen
 import com.gymbrosbro.app.ui.screens.me.MeScreen
+import com.gymbrosbro.app.ui.screens.me.TrophiesScreen
 import com.gymbrosbro.app.ui.screens.session.SessionScreen
 import com.gymbrosbro.app.ui.screens.session.SessionSummaryScreen
 import com.gymbrosbro.app.ui.screens.settings.SettingsScreen
@@ -100,6 +104,7 @@ fun AppRoot() {
                     HomeScreen(
                         onPressStart = { navController.navigateToTab(TopLevelDestination.TRAIN) },
                         onOpenSession = { navController.navigate(SessionRoute(it)) },
+                        onOpenLocker = { navController.navigate(LockerRoute) },
                     )
                 }
                 composable<TrainRoute> {
@@ -122,6 +127,8 @@ fun AppRoot() {
                 }
                 composable<MeRoute> {
                     MeScreen(
+                        onOpenLocker = { navController.navigate(LockerRoute) },
+                        onOpenTrophies = { navController.navigate(TrophiesRoute) },
                         onOpenHistory = { navController.navigate(HistoryRoute) },
                         onOpenSettings = { navController.navigate(SettingsRoute) },
                     )
@@ -189,6 +196,8 @@ fun AppRoot() {
                 }
                 composable<SettingsRoute> { SettingsScreen(onBack = navController::popBackStack) }
                 composable<ScheduleRoute> { ScheduleScreen(onBack = navController::popBackStack) }
+                composable<LockerRoute> { LockerScreen(onBack = navController::popBackStack) }
+                composable<TrophiesRoute> { TrophiesScreen(onBack = navController::popBackStack) }
             }
         }
     }

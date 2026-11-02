@@ -138,9 +138,10 @@ ScheduleRule      id, templateId? (null = any workout), kind (WEEKLY | EVERY_N_D
 ScheduleException ruleId, originalDate, action (MOVE | SKIP), newDate?
 SchedulePause     startDate, endDate                    vacation / sick, freezes streaks
 BodyweightEntry   date, weightKg
-UnlockedItem      itemId, unlockedAt                    permanent once earned
-EarnedAchievement achievementId, earnedAt               permanent once earned
-AvatarConfig      bodyBase, skinTone, hairStyle, hairColor, headwear, top, bottom, shoes, accessory
+UnlockedItem      itemId, unlockedAt, sessionId?        permanent once earned
+EarnedTrophy      trophyId, earnedAt, sessionId?        permanent once earned
+AvatarConfig      skin, hair, hairColor, headwear, top, topColor, bottom, bottomColor, shoes, accessory
+                  (DataStore JSON; item ids, anything locked falls back to the default)
 ```
 
 **Derived, not stored:** totals, per-exercise stats, personal records, streaks, streak freezes and XP are all calculated from history. Editing or deleting an old workout corrects everything automatically. **Unlocks and achievements are kept permanently**: once you earn something, an edit never takes it away.
@@ -270,21 +271,30 @@ Custom calisthenics exercises can set their own factor.
   - +50 per PR
   - +25 for finishing a scheduled occurrence
   - +100 for hitting the weekly goal
-- **Levels:** level *n* needs `250 × n` more XP than the level before it. The level-up screen says **LEVEL UP!**
-- **Achievements ("TROPHIES"), for example:**
+- Only working sets count. The schedule bonus goes to the first workout on a scheduled day; the weekly-goal bonus goes to the workout that reaches the goal.
+- **Levels:** level *n* needs `250 × (n − 1)` more XP than level *n − 1*, so reaching level *n* takes `125 · n · (n − 1)` XP (level 2 = 250, level 10 = 11,250). The finish screen says **LEVEL UP!**
+- Trophies and unlocks are checked after each finished workout and at launch, which also backfills them for older history.
+- **Achievements ("TROPHIES"), 20 in all:**
   - First workout ("PLAYER 1 READY")
   - 10 / 50 / 100 / 250 / 500 workouts
   - Weekly streak 4 / 12 / 26 / 52
-  - First PR, 25 PRs
+  - COMBO ×10 / ×25 / ×50
+  - First PR, 25 PRs, 100 PRs
   - Lifetime volume milestones (100k / 1M lb)
   - 1,000 lifetime pull-ups
   - Marathon distance total
 
 ### 7.10 Avatar ("LOCKER")
-- A full-body 20×34 pixel character. Optional, and cosmetic only: the body never changes with progress.
-- **Layers:** body base (2 frames), skin tone (8 palette swaps), hair style, hair color, headwear, top, bottom, shoes, accessory (headphones, wristbands, lifting gloves, chain...).
-- You start with a basic set. More items unlock via level, achievements, lifetime totals and the Supporter Pack.
-- A 2-frame idle animation, plus a celebrate animation on PRs and level-ups. The avatar appears on Home and on the finish screen.
+- A full-body 22×34 pixel character in a front lat spread, hands on hips (on a 22×37 canvas, with headroom for spiky hair and crowns). Optional, and cosmetic only: the body never changes with progress.
+- **Layers,** drawn in order: body, shoes, bottom, top, hair, accessory, headwear. Each layer owns its palette chars, so colors swap independently.
+  - Skin: 8 tones, all available from the start.
+  - Hair: bald, short, buzz, spiky, long, mohawk. Hair color: 10.
+  - Headwear: headband, cap, beanie, crown. Hats hide hair that pokes out above them.
+  - Top: tank, tee, stringer, hoodie, shirtless. Bottom: shorts, joggers. Top, bottom and shoes each take one of 12 gear colors.
+  - Accessory: wristbands, lifting belt, headphones, gloves, gold chain.
+- You start with a basic set. More items unlock via level or trophies (lifetime totals unlock through their trophies); Supporter Pack items come in Phase 4.
+- In the LOCKER, tapping a locked item tries it on without saving and says how to unlock it.
+- A 2-frame idle bob, plus a hop on PRs, trophies and level-ups. The avatar appears on Home, the Me tab, the locker and the finish screen.
 - Sprites are drawn as pixel grids in code, so palette swaps are trivial and they stay crisp at any size. Bought asset packs (with a commercial license) are a fallback for anything more ambitious.
 
 ### 7.11 Look & sound
@@ -294,7 +304,7 @@ Custom calisthenics exercises can set their own factor.
   - A readable sans for body text, inputs and lists
 - Chunky 2-px borders, pixel panels and big tap targets for use mid-set.
 - Arcade vocabulary in the fun spots only: PRESS START, STAGE CLEAR, NEW HIGH SCORE, LEVEL UP, COMBO, TROPHIES, LOCKER. Functional buttons use plain words.
-- Chiptune sound effects (made with sfxr-style tools) for set complete, PR and level-up, plus haptics. Both can be toggled.
+- Chiptune sound effects for set complete, PR and level-up, synthesized in code (square waves, no audio files), plus vibration. Both can be toggled and are on by default.
 
 ### 7.12 Navigation
 Bottom bar with 5 tabs:
@@ -356,7 +366,7 @@ Turning monetization on is reported to be hard or impossible to reverse for an a
 | **0. Foundation** ✅ | Android Studio project, git, version catalog, theme (palette, fonts, pixel components), 5-tab nav skeleton, Room setup, sprite renderer, seed pipeline + `exercises.json` | Themed app with empty tabs installs on the owner's phone |
 | **1. Core loop** ✅ | Library (browse/search/filter/detail), custom exercises, templates, session logging with pre-fill and resume, basic finish screen, history with edit/delete, settings (units, bodyweight) | The owner runs real workouts on it |
 | **2. Feedback** ✅ | PR detection + NEW HIGH SCORE, overload suggestions, Stats, per-exercise stats and charts, schedule + calendar, both streaks + freezes + pause, reminders | Calendar shows the weekly plan, streaks and stats are accurate |
-| **3. Fun layer** | XP/levels, achievements, avatar + locker + unlocks, all 15 muscle icons, sound effects and haptics | Workouts earn XP and unlock outfits |
+| **3. Fun layer** ✅ | XP/levels, achievements, avatar + locker + unlocks, all 15 muscle icons, sound effects and haptics | Workouts earn XP and unlock outfits |
 | **4. Ship** | Onboarding, export/import, Auto Backup check, accessibility and polish pass, Supporter Pack + billing, privacy policy, Data Safety form, store listing and screenshots, closed test (12+ testers × 14 days), production release | Live on Google Play |
 
 **Backlog:** rest timer, animated exercise sprites, supersets, optional Cloud Save, plate calculator, home-screen widget, Health Connect export, small avatar body variations.

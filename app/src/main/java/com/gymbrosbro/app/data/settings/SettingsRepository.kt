@@ -8,9 +8,11 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.gymbrosbro.app.avatar.AvatarConfig
 import com.gymbrosbro.app.domain.units.UnitSystem
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.json.Json
 import java.time.DayOfWeek
 import java.time.LocalTime
 
@@ -40,6 +42,17 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             graceDay = prefs[GRACE_REMINDER] ?: false,
             offered = prefs[REMINDER_OFFERED] ?: false,
         )
+    }
+
+    /** Chiptune sound effects for set complete, high scores and level-ups. */
+    val sound: Flow<Boolean> = dataStore.data.map { it[SOUND] ?: true }
+
+    /** Vibration for the same moments as [sound]. */
+    val haptics: Flow<Boolean> = dataStore.data.map { it[HAPTICS] ?: true }
+
+    /** What the avatar is wearing. Use AwardsRepository.avatar, which drops anything locked. */
+    val avatar: Flow<AvatarConfig> = dataStore.data.map { prefs ->
+        prefs[AVATAR]?.let { runCatching { json.decodeFromString<AvatarConfig>(it) }.getOrNull() } ?: AvatarConfig()
     }
 
     /** Version of the bundled exercise library last merged into the database. */
@@ -81,6 +94,18 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         dataStore.edit { it[REMINDER_OFFERED] = true }
     }
 
+    suspend fun setSound(enabled: Boolean) {
+        dataStore.edit { it[SOUND] = enabled }
+    }
+
+    suspend fun setHaptics(enabled: Boolean) {
+        dataStore.edit { it[HAPTICS] = enabled }
+    }
+
+    suspend fun setAvatar(config: AvatarConfig) {
+        dataStore.edit { it[AVATAR] = json.encodeToString(config) }
+    }
+
     suspend fun setSeedVersion(version: Int) {
         dataStore.edit { it[SEED_VERSION] = version }
     }
@@ -95,6 +120,10 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val REMINDER_MINUTES = intPreferencesKey("reminder_minutes")
         val GRACE_REMINDER = booleanPreferencesKey("grace_reminder")
         val REMINDER_OFFERED = booleanPreferencesKey("reminder_offered")
+        val SOUND = booleanPreferencesKey("sound")
+        val HAPTICS = booleanPreferencesKey("haptics")
+        val AVATAR = stringPreferencesKey("avatar")
+        val json = Json { ignoreUnknownKeys = true }
     }
 }
 

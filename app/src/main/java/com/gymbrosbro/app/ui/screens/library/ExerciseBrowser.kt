@@ -29,6 +29,7 @@ import com.gymbrosbro.app.data.db.entity.ExerciseEntity
 import com.gymbrosbro.app.domain.model.Equipment
 import com.gymbrosbro.app.domain.model.ExerciseSource
 import com.gymbrosbro.app.domain.model.MuscleGroup
+import com.gymbrosbro.app.sprites.MuscleSprites
 import com.gymbrosbro.app.sprites.SpriteImage
 import com.gymbrosbro.app.sprites.Sprites
 import com.gymbrosbro.app.ui.color
@@ -148,7 +149,7 @@ fun ExerciseRow(exercise: ExerciseEntity, selected: Boolean?, onClick: () -> Uni
 @Composable
 fun MuscleIcon(muscle: MuscleGroup, size: Int, modifier: Modifier = Modifier) {
     SpriteImage(
-        sprite = Sprites.Flex.recolor('f' to muscle.color),
+        sprite = MuscleSprites.of(muscle).recolor('f' to muscle.color),
         contentDescription = muscle.label,
         size = size.dp,
         modifier = modifier,

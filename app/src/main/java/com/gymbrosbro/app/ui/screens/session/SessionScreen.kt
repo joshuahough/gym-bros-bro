@@ -77,7 +77,9 @@ fun SessionScreen(
     onFinished: (sessionId: Long) -> Unit,
 ) {
     val viewModel = appViewModel { c, s ->
-        SessionViewModel(c.sessionRepository, c.bodyweightRepository, c.settings, c.appScope, s)
+        SessionViewModel(
+            c.sessionRepository, c.bodyweightRepository, c.settings, c.awardsRepository, c.feedback, c.appScope, s,
+        )
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val keepScreenOn by viewModel.keepScreenOn.collectAsStateWithLifecycle()

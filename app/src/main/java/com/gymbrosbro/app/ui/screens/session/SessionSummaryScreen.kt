@@ -14,9 +14,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,21 +29,35 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.toRoute
+import com.gymbrosbro.app.avatar.AvatarConfig
+import com.gymbrosbro.app.avatar.Locker
+import com.gymbrosbro.app.avatar.LockerItem
+import com.gymbrosbro.app.data.AwardsRepository
 import com.gymbrosbro.app.data.BodyweightRepository
 import com.gymbrosbro.app.data.ProgressRepository
 import com.gymbrosbro.app.data.SessionRepository
 import com.gymbrosbro.app.data.db.SessionWithExercises
 import com.gymbrosbro.app.data.db.entity.BodyweightEntryEntity
+import com.gymbrosbro.app.domain.progress.Level
+import com.gymbrosbro.app.domain.progress.SessionXp
+import com.gymbrosbro.app.domain.progress.Trophies
+import com.gymbrosbro.app.domain.progress.Trophy
+import com.gymbrosbro.app.domain.progress.Xp
 import com.gymbrosbro.app.domain.records.ExerciseRecord
 import com.gymbrosbro.app.domain.session.SetFormat
 import com.gymbrosbro.app.domain.session.WorkoutMath
 import com.gymbrosbro.app.domain.units.Units
+import com.gymbrosbro.app.feedback.Cue
+import com.gymbrosbro.app.feedback.Feedback
 import com.gymbrosbro.app.ui.LocalUnitSystem
 import com.gymbrosbro.app.ui.appViewModel
+import com.gymbrosbro.app.ui.components.AvatarView
+import com.gymbrosbro.app.ui.components.LevelBar
 import com.gymbrosbro.app.ui.components.NumberInputDialog
 import com.gymbrosbro.app.ui.components.PixelButton
 import com.gymbrosbro.app.ui.components.PixelPanel
 import com.gymbrosbro.app.ui.components.StatTile
+import com.gymbrosbro.app.ui.description
 import com.gymbrosbro.app.ui.format
 import com.gymbrosbro.app.ui.formatVolume
 import com.gymbrosbro.app.ui.label
@@ -58,13 +74,38 @@ import java.time.Duration
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
+/** What this workout earned: its XP, and the level before and after it. */
+data class SummaryXp(val earned: SessionXp, val before: Level, val after: Level) {
+    val leveledUp: Boolean get() = after.level > before.level
+}
+
 class SessionSummaryViewModel(
     private val sessions: SessionRepository,
     private val bodyweight: BodyweightRepository,
     progress: ProgressRepository,
+    awards: AwardsRepository,
+    private val feedback: Feedback,
     savedState: SavedStateHandle,
 ) : ViewModel() {
     private val sessionId = savedState.toRoute<SessionSummaryRoute>().sessionId
+
+    val xp: StateFlow<SummaryXp?> = progress.xp
+        .map { xp -> xp.sessions[sessionId]?.let { SummaryXp(it, xp.levelBefore(sessionId), xp.level) } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** Trophies and gear this workout unlocked. */
+    val newTrophies: StateFlow<List<Trophy>> = awards.trophies
+        .map { list -> list.filter { it.sessionId == sessionId }.mapNotNull { Trophies.byId(it.trophyId) } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val newGear: StateFlow<List<LockerItem>> = awards.unlocks
+        .map { list -> list.filter { it.sessionId == sessionId }.mapNotNull { Locker.item(it.itemId) } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val avatar: StateFlow<AvatarConfig?> = awards.avatar
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    fun celebrate() = feedback.play(Cue.LEVEL_UP)
 
     /** Records set in this workout, including whole-workout ones like volume. */
     val records: StateFlow<List<ExerciseRecord>> = progress.records
@@ -109,8 +150,15 @@ class SessionSummaryViewModel(
 @Composable
 fun SessionSummaryScreen(onDone: () -> Unit) {
     val viewModel = appViewModel { c, s ->
-        SessionSummaryViewModel(c.sessionRepository, c.bodyweightRepository, c.progressRepository, s)
+        SessionSummaryViewModel(
+            c.sessionRepository, c.bodyweightRepository, c.progressRepository, c.awardsRepository, c.feedback, s,
+        )
     }
+    val xp by viewModel.xp.collectAsStateWithLifecycle()
+    val newTrophies by viewModel.newTrophies.collectAsStateWithLifecycle()
+    val newGear by viewModel.newGear.collectAsStateWithLifecycle()
+    val avatar by viewModel.avatar.collectAsStateWithLifecycle()
+    var cheered by rememberSaveable { mutableStateOf(false) }
     val records by viewModel.records.collectAsStateWithLifecycle()
     val detail by viewModel.session.collectAsStateWithLifecycle()
     val latestBodyweight by viewModel.latestBodyweight.collectAsStateWithLifecycle()
@@ -139,6 +187,19 @@ fun SessionSummaryScreen(onDone: () -> Unit) {
             Spacer(Modifier.height(16.dp))
             Text("STAGE CLEAR!", style = MaterialTheme.typography.displayMedium, color = GbbColors.Gold, textAlign = TextAlign.Center)
             Text(d.session.name, style = MaterialTheme.typography.titleMedium, color = GbbColors.Fog)
+
+            val leveledUp = xp?.leveledUp == true
+            LaunchedEffect(leveledUp, newTrophies.isNotEmpty()) {
+                if ((leveledUp || newTrophies.isNotEmpty()) && !cheered) {
+                    cheered = true
+                    viewModel.celebrate()
+                }
+            }
+            avatar?.let {
+                AvatarView(it, 111.dp, celebrate = leveledUp || records.isNotEmpty() || newTrophies.isNotEmpty())
+            }
+            xp?.let { XpPanel(it) }
+            if (newTrophies.isNotEmpty() || newGear.isNotEmpty()) UnlocksPanel(newTrophies, newGear)
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatTile("TIME", "${minutes}m", GbbColors.Cyan, Modifier.weight(1f))
@@ -254,5 +315,61 @@ fun SessionSummaryScreen(onDone: () -> Unit) {
             },
             onDismiss = { editBodyweight = false },
         )
+    }
+}
+
+@Composable
+private fun XpPanel(xp: SummaryXp) {
+    val e = xp.earned
+    PixelPanel(Modifier.fillMaxWidth(), border = if (xp.leveledUp) GbbColors.Gold else GbbColors.Green) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            if (xp.leveledUp) {
+                Text("LEVEL UP!", style = MaterialTheme.typography.headlineSmall, color = GbbColors.Gold)
+                Text("You're level ${xp.after.level} now.", style = MaterialTheme.typography.bodyMedium, color = GbbColors.Chalk)
+                Spacer(Modifier.height(4.dp))
+            }
+            Text("+${e.total} XP", style = MaterialTheme.typography.titleLarge, color = GbbColors.Green)
+            XpLine("Workout", Xp.WORKOUT)
+            if (e.sets > 0) XpLine("${e.sets} ${if (e.sets == 1) "set" else "sets"}", e.sets * Xp.SET)
+            if (e.records > 0) XpLine("${e.records} high ${if (e.records == 1) "score" else "scores"}", e.records * Xp.RECORD)
+            if (e.scheduled) XpLine("On schedule", Xp.SCHEDULED)
+            if (e.weeklyGoal) XpLine("Weekly goal hit", Xp.WEEKLY_GOAL)
+            Spacer(Modifier.height(4.dp))
+            LevelBar(xp.after, Modifier.fillMaxWidth())
+        }
+    }
+}
+
+@Composable
+private fun XpLine(label: String, xp: Int) {
+    Row(Modifier.fillMaxWidth()) {
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = GbbColors.Fog, modifier = Modifier.weight(1f))
+        Text("+$xp", style = MaterialTheme.typography.bodyMedium, color = GbbColors.Chalk)
+    }
+}
+
+@Composable
+private fun UnlocksPanel(trophies: List<Trophy>, gear: List<LockerItem>) {
+    val units = LocalUnitSystem.current
+    PixelPanel(Modifier.fillMaxWidth(), border = GbbColors.Cyan) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (trophies.isNotEmpty()) {
+                Text(
+                    if (trophies.size == 1) "TROPHY EARNED!" else "${trophies.size} TROPHIES EARNED!",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = GbbColors.Gold,
+                )
+                trophies.forEach { t ->
+                    Text(t.name, style = MaterialTheme.typography.titleSmall, color = GbbColors.Chalk)
+                    Text(t.description(units), style = MaterialTheme.typography.bodyMedium, color = GbbColors.Fog)
+                }
+            }
+            if (gear.isNotEmpty()) {
+                if (trophies.isNotEmpty()) Spacer(Modifier.height(4.dp))
+                Text("NEW GEAR!", style = MaterialTheme.typography.titleLarge, color = GbbColors.Cyan)
+                Text(gear.joinToString(", ") { it.name }, style = MaterialTheme.typography.bodyMedium, color = GbbColors.Chalk)
+                Text("Try it on in the Locker (Me tab).", style = MaterialTheme.typography.bodySmall, color = GbbColors.Fog)
+            }
+        }
     }
 }

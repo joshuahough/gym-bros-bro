@@ -65,6 +65,12 @@ class SettingsViewModel(
     val reminders: StateFlow<ReminderSettings> = settings.reminders
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ReminderSettings())
 
+    val sound: StateFlow<Boolean> = settings.sound
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+
+    val haptics: StateFlow<Boolean> = settings.haptics
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+
     fun setUnits(system: UnitSystem) = viewModelScope.launch { settings.setUnitSystem(system) }
     fun setKeepScreenOn(enabled: Boolean) = viewModelScope.launch { settings.setKeepScreenOn(enabled) }
     fun recordBodyweight(weightKg: Double) = viewModelScope.launch { bodyweight.record(weightKg) }
@@ -72,6 +78,8 @@ class SettingsViewModel(
     fun setReminders(enabled: Boolean) = viewModelScope.launch { settings.setRemindersEnabled(enabled) }
     fun setReminderTime(time: LocalTime) = viewModelScope.launch { settings.setReminderTime(time) }
     fun setGraceReminder(enabled: Boolean) = viewModelScope.launch { settings.setGraceReminder(enabled) }
+    fun setSound(enabled: Boolean) = viewModelScope.launch { settings.setSound(enabled) }
+    fun setHaptics(enabled: Boolean) = viewModelScope.launch { settings.setHaptics(enabled) }
 }
 
 @Composable
@@ -81,6 +89,8 @@ fun SettingsScreen(onBack: () -> Unit) {
     val latest by viewModel.latestBodyweight.collectAsStateWithLifecycle()
     val weekStart by viewModel.weekStart.collectAsStateWithLifecycle()
     val reminders by viewModel.reminders.collectAsStateWithLifecycle()
+    val sound by viewModel.sound.collectAsStateWithLifecycle()
+    val haptics by viewModel.haptics.collectAsStateWithLifecycle()
     var editBodyweight by remember { mutableStateOf(false) }
     var editReminderTime by remember { mutableStateOf(false) }
     val enableReminders = rememberNotificationPermission { granted -> if (granted) viewModel.setReminders(true) }
@@ -146,6 +156,18 @@ fun SettingsScreen(onBack: () -> Unit) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     PixelChip("Monday", weekStart == DayOfWeek.MONDAY, { viewModel.setWeekStart(DayOfWeek.MONDAY) })
                     PixelChip("Sunday", weekStart == DayOfWeek.SUNDAY, { viewModel.setWeekStart(DayOfWeek.SUNDAY) })
+                }
+            }
+            SettingPanel("SOUND", "Chiptune blips for finished sets, high scores and level-ups.") {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PixelChip("On", sound, { viewModel.setSound(true) })
+                    PixelChip("Off", !sound, { viewModel.setSound(false) })
+                }
+            }
+            SettingPanel("VIBRATION", "A buzz at the same moments.") {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PixelChip("On", haptics, { viewModel.setHaptics(true) })
+                    PixelChip("Off", !haptics, { viewModel.setHaptics(false) })
                 }
             }
             SettingPanel("KEEP SCREEN AWAKE", "Stops the screen locking during a workout.") {
