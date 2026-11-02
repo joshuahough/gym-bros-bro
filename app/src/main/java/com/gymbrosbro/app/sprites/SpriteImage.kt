@@ -13,7 +13,10 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 
-/** Draws a [Sprite] scaled with nearest-neighbor filtering so pixels stay crisp. */
+/**
+ * Draws a [Sprite] scaled with nearest-neighbor filtering so pixels stay crisp.
+ * [size] is the height; the width follows the sprite's proportions.
+ */
 @Composable
 fun SpriteImage(
     sprite: Sprite,
@@ -25,7 +28,7 @@ fun SpriteImage(
     Image(
         bitmap = bitmap,
         contentDescription = contentDescription,
-        modifier = modifier.size(size),
+        modifier = modifier.size(width = size * sprite.width / sprite.height, height = size),
         contentScale = ContentScale.Fit,
         filterQuality = FilterQuality.None,
     )

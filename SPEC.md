@@ -281,7 +281,7 @@ Custom calisthenics exercises can set their own factor.
   - Marathon distance total
 
 ### 7.10 Avatar ("LOCKER")
-- Optional, and cosmetic only. The body never changes with progress.
+- A full-body 20×34 pixel character. Optional, and cosmetic only: the body never changes with progress.
 - **Layers:** body base (2 frames), skin tone (8 palette swaps), hair style, hair color, headwear, top, bottom, shoes, accessory (headphones, wristbands, lifting gloves, chain...).
 - You start with a basic set. More items unlock via level, achievements, lifetime totals and the Supporter Pack.
 - A 2-frame idle animation, plus a celebrate animation on PRs and level-ups. The avatar appears on Home and on the finish screen.
@@ -360,6 +360,8 @@ Turning monetization on is reported to be hard or impossible to reverse for an a
 | **4. Ship** | Onboarding, export/import, Auto Backup check, accessibility and polish pass, Supporter Pack + billing, privacy policy, Data Safety form, store listing and screenshots, closed test (12+ testers × 14 days), production release | Live on Google Play |
 
 **Backlog:** rest timer, animated exercise sprites, supersets, optional Cloud Save, plate calculator, home-screen widget, Health Connect export, small avatar body variations.
+
+**2.0:** more avatar poses, and animations of the avatar working out (lifting, curling, running...) that play when you open the app.
 
 ## 12. Open questions
 

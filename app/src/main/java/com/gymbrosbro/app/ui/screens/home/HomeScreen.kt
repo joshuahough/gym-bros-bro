@@ -123,9 +123,9 @@ fun HomeScreen(onPressStart: () -> Unit, onOpenSession: (Long) -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 SpriteImage(
-                    sprite = Sprites.Player.recolor('f' to GbbColors.Cyan),
+                    sprite = Sprites.Avatar,
                     contentDescription = "Your avatar",
-                    size = 96.dp,
+                    size = 136.dp,
                 )
                 Spacer(Modifier.height(12.dp))
                 Text("PLAYER 1", style = MaterialTheme.typography.titleLarge, color = GbbColors.Chalk)
