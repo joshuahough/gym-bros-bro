@@ -210,8 +210,12 @@ Custom calisthenics exercises can set their own factor.
   - Set rows pre-filled from last time
   - A **suggestion chip** (§8). Tapping it fills the sets
 - Tap a set's checkbox to complete it. If the next row is still empty, it copies the numbers you just logged, so a first-ever workout isn't three rounds of retyping. You can add or remove sets, mark warm-ups, add, swap or reorder exercises mid-session, and add notes.
+- **Inputs:** everything is on the number pad. Times are separate minute and second boxes; seconds can run past 59, so 90 s and 1 min 30 s both work. Added weight on calisthenics says it's optional (blank = bodyweight).
+- **Keyboard:** the last input in a set shows DONE instead of NEXT. DONE, checking a set off, or switching to another app lets go of the cursor, so the keyboard never pops back up on its own.
+- Checking off the last open set of an exercise scrolls to the next exercise.
+- Finishing with every set checked says **ALL SETS COMPLETED! Finish workout?**
 - **No rest timer in v1.** Session duration is tracked from start and end times.
-- In-progress sessions are saved continuously, so killing the app never loses a workout. You can resume from Home.
+- In-progress sessions are saved continuously, so killing the app never loses a workout. You can resume from Home or Train, or delete it from Train (with a confirmation).
 - **Warm-ups count toward every total** (reps, volume, time, distance). They're only left out of PR detection and overload suggestions, so a light warm-up never gets mistaken for your working weight.
 - **PR detection:** working sets only. It triggers a **NEW HIGH SCORE!** pop-up when the set is completed.
 - **Finish screen** ("STAGE CLEAR"):
@@ -292,8 +296,9 @@ Custom calisthenics exercises can set their own factor.
   - Headwear: headband, cap, beanie, crown. Hats hide hair that pokes out above them.
   - Top: tank, tee, stringer, hoodie, shirtless. Bottom: shorts, joggers. Top, bottom and shoes each take one of 12 gear colors.
   - Accessory: wristbands, lifting belt, headphones, gloves, gold chain.
-- You start with a basic set. More items unlock via level or trophies (lifetime totals unlock through their trophies); Supporter Pack items come in Phase 4.
+- You start with a basic set. More items unlock via level or trophies (lifetime totals unlock through their trophies); Supporter Pack items come in Phase 6.
 - In the LOCKER, tapping a locked item tries it on without saving and says how to unlock it.
+- **Player name:** RENAME on the Me tab; up to 12 letters, numbers or spaces, shown on Home and Me. Blank means PLAYER 1.
 - A 2-frame idle bob, plus a hop on PRs, trophies and level-ups. The avatar appears on Home, the Me tab, the locker and the finish screen.
 - Sprites are drawn as pixel grids in code, so palette swaps are trivial and they stay crisp at any size. Bought asset packs (with a commercial license) are a fallback for anything more ambitious.
 
@@ -357,7 +362,7 @@ Suggestions are always optional. They're based on the most recent session's **wo
 
 ### Merchant account caveat
 
-Turning monetization on is reported to be hard or impossible to reverse for an account. So the merchant account is set up only in Phase 4, when the Supporter Pack is actually ready.
+Turning monetization on is reported to be hard or impossible to reverse for an account. So the merchant account is set up only in Phase 6, when the Supporter Pack is actually ready.
 
 ## 11. Roadmap
 
@@ -367,18 +372,20 @@ Turning monetization on is reported to be hard or impossible to reverse for an a
 | **1. Core loop** ✅ | Library (browse/search/filter/detail), custom exercises, templates, session logging with pre-fill and resume, basic finish screen, history with edit/delete, settings (units, bodyweight) | The owner runs real workouts on it |
 | **2. Feedback** ✅ | PR detection + NEW HIGH SCORE, overload suggestions, Stats, per-exercise stats and charts, schedule + calendar, both streaks + freezes + pause, reminders | Calendar shows the weekly plan, streaks and stats are accurate |
 | **3. Fun layer** ✅ | XP/levels, achievements, avatar + locker + unlocks, all 15 muscle icons, sound effects and haptics | Workouts earn XP and unlock outfits |
-| **4. Ship** | Onboarding, export/import, Auto Backup check, accessibility and polish pass, Supporter Pack + billing, privacy policy, Data Safety form, store listing and screenshots, closed test (12+ testers × 14 days), production release | Live on Google Play |
+| **4. Touch-ups** | From the first real workout: minute + second time fields on the numpad, DONE on a set's last field, checking a set or leaving the app clears the cursor (no surprise keyboard), auto-scroll to the next exercise, "optional" hint on added weight, "All sets completed!" finish prompt, custom player name, delete an in-progress workout from Train | The owner's next workout has no keyboard or scrolling annoyances |
+| **5. Go public** | Audit the project for anything that shouldn't be public (keys, keystores, local paths, personal data, `local.properties`), tighten `.gitignore`, create the GitHub repo and push | Code is on GitHub with nothing private in it or its history |
+| **6. Ship** | Onboarding, export/import, Auto Backup check, accessibility and polish pass, Supporter Pack + billing, privacy policy, Data Safety form, store listing and screenshots, closed test (12+ testers × 14 days), production release | Live on Google Play |
 
 **Backlog:** rest timer, animated exercise sprites, supersets, optional Cloud Save, plate calculator, home-screen widget, Health Connect export, small avatar body variations.
 
-**2.0:** more avatar poses, and animations of the avatar working out (lifting, curling, running...) that play when you open the app.
+**2.0:** more avatar poses, and animations of the avatar working out (lifting, curling, running...) that play when you open the app. A leaderboard where players see each other's accomplishments by player name.
 
 ## 12. Open questions
 
 1. **Supporter Pack** price and exact contents.
 2. **XP and level numbers.** Tune after a few weeks of real use.
 
-## 13. Owner to-dos before Phase 4 store setup
+## 13. Owner to-dos before Phase 6 store setup
 
 - [ ] **Set up a PO box or virtual mailbox** *before* creating the merchant account. Its address becomes the public address on the store listing, and Google must accept it.
 - [ ] Line up 12+ closed-test testers who can commit to 14 days in a row.

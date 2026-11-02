@@ -22,6 +22,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -31,6 +33,7 @@ import com.gymbrosbro.app.domain.session.SetFormat
 import com.gymbrosbro.app.domain.session.WorkoutMath
 import com.gymbrosbro.app.domain.units.UnitSystem
 import com.gymbrosbro.app.domain.units.Units
+import com.gymbrosbro.app.ui.components.PixelDurationField
 import com.gymbrosbro.app.ui.components.PixelTextField
 import com.gymbrosbro.app.ui.components.SetCheckBox
 import com.gymbrosbro.app.ui.theme.GbbColors
@@ -44,9 +47,9 @@ fun SetHeader(type: TrackingType, units: UnitSystem) {
     val weight = Units.weightUnit(units).uppercase()
     val labels = when (type) {
         TrackingType.WEIGHT_REPS -> listOf(weight, "REPS")
-        TrackingType.BODYWEIGHT_REPS -> listOf("+$weight", "REPS")
-        TrackingType.DURATION -> listOf("TIME")
-        TrackingType.DISTANCE_DURATION -> listOf(Units.distanceUnit(units).uppercase(), "TIME")
+        TrackingType.BODYWEIGHT_REPS -> listOf("ADDED WEIGHT ($weight)", "REPS")
+        TrackingType.DURATION -> listOf("MIN : SEC")
+        TrackingType.DISTANCE_DURATION -> listOf(Units.distanceUnit(units).uppercase(), "MIN : SEC")
         TrackingType.WEIGHT_DISTANCE -> listOf(weight, Units.shortDistanceUnit(units).uppercase())
     }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -63,7 +66,9 @@ private fun HeaderText(text: String, modifier: Modifier) {
 
 /**
  * One set: label (tap for warm-up / delete), inputs for the tracking type,
- * and the check-off box. Edits save as you type.
+ * and the check-off box. Edits save as you type. The last input's key is DONE,
+ * and DONE or checking the set off lets go of the cursor so the keyboard
+ * doesn't come back on its own.
  */
 @Composable
 fun SetRow(
@@ -77,6 +82,7 @@ fun SetRow(
     onDelete: () -> Unit,
 ) {
     val fill = if (set.isCompleted) GbbColors.Dusk else GbbColors.Night
+    val focusManager = LocalFocusManager.current
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -98,6 +104,7 @@ fun SetRow(
                     dbValue = set.distanceM?.let { Units.metersToDisplay(it, units) },
                     fill = fill,
                     placeholder = "0.0",
+                    imeAction = ImeAction.Next,
                 ) { v -> onUpdate { it.copy(distanceM = v?.let { d -> Units.displayToMeters(d, units) }) } }
                 DurationField(set.durationSec, fill) { v -> onUpdate { it.copy(durationSec = v) } }
             }
@@ -113,7 +120,10 @@ fun SetRow(
         SetCheckBox(
             checked = set.isCompleted,
             enabled = WorkoutMath.canComplete(type, set),
-            onToggle = onToggleComplete,
+            onToggle = {
+                focusManager.clearFocus()
+                onToggleComplete()
+            },
         )
     }
 }
@@ -164,6 +174,7 @@ private fun RowScope.SyncedField(
     placeholder: String,
     keyboardType: KeyboardType,
     fill: Color,
+    imeAction: ImeAction,
 ) {
     var text by remember { mutableStateOf(dbText) }
     LaunchedEffect(dbText) {
@@ -178,6 +189,7 @@ private fun RowScope.SyncedField(
         modifier = Modifier.weight(1f),
         placeholder = placeholder,
         keyboardType = keyboardType,
+        imeAction = imeAction,
         textAlign = TextAlign.Center,
         fill = fill,
         textStyle = MaterialTheme.typography.titleMedium,
@@ -198,6 +210,7 @@ private fun RowScope.WeightField(
     placeholder = placeholder,
     keyboardType = KeyboardType.Decimal,
     fill = fill,
+    imeAction = ImeAction.Next,
 )
 
 @Composable
@@ -208,20 +221,26 @@ private fun RowScope.RepsField(reps: Int?, fill: Color, onChange: (Int?) -> Unit
     placeholder = "0",
     keyboardType = KeyboardType.Number,
     fill = fill,
+    imeAction = ImeAction.Done,
 )
 
 @Composable
-private fun RowScope.DurationField(sec: Int?, fill: Color, onChange: (Int?) -> Unit) = SyncedField(
-    dbText = sec?.let(SetFormat::duration).orEmpty(),
-    normalize = { t -> SetFormat.parseDuration(t)?.let(SetFormat::duration).orEmpty() },
-    onCommit = { t -> onChange(SetFormat.parseDuration(t)) },
-    placeholder = "m:ss",
-    keyboardType = KeyboardType.Text,
+private fun RowScope.DurationField(sec: Int?, fill: Color, onChange: (Int?) -> Unit) = PixelDurationField(
+    seconds = sec,
+    onChange = onChange,
+    modifier = Modifier.weight(1f),
     fill = fill,
+    textStyle = MaterialTheme.typography.titleMedium,
 )
 
 @Composable
-private fun RowScope.DecimalField(dbValue: Double?, fill: Color, placeholder: String, onChange: (Double?) -> Unit) =
+private fun RowScope.DecimalField(
+    dbValue: Double?,
+    fill: Color,
+    placeholder: String,
+    imeAction: ImeAction = ImeAction.Done,
+    onChange: (Double?) -> Unit,
+) =
     SyncedField(
         dbText = dbValue?.let { Units.formatNumber(it, 2) }.orEmpty(),
         normalize = { t -> SetFormat.parseDecimal(t)?.let { Units.formatNumber(it, 2) }.orEmpty() },
@@ -229,4 +248,5 @@ private fun RowScope.DecimalField(dbValue: Double?, fill: Color, placeholder: St
         placeholder = placeholder,
         keyboardType = KeyboardType.Decimal,
         fill = fill,
+        imeAction = imeAction,
     )

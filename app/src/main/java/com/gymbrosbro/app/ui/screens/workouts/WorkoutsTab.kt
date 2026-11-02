@@ -16,6 +16,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -23,7 +26,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gymbrosbro.app.data.db.TemplateWithExercises
+import com.gymbrosbro.app.data.db.entity.WorkoutSessionEntity
 import com.gymbrosbro.app.ui.appViewModel
+import com.gymbrosbro.app.ui.components.ConfirmDialog
 import com.gymbrosbro.app.ui.components.PixelButton
 import com.gymbrosbro.app.ui.components.PixelPanel
 import com.gymbrosbro.app.ui.theme.GbbColors
@@ -38,6 +43,7 @@ fun WorkoutsTab(
     val templates by viewModel.templates.collectAsStateWithLifecycle()
     val inProgress by viewModel.inProgress.collectAsStateWithLifecycle()
     val starter = rememberStartWorkoutController(viewModel, onOpenSession)
+    var confirmDiscard by remember { mutableStateOf<WorkoutSessionEntity?>(null) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -52,6 +58,13 @@ fun WorkoutsTab(
                             Text("IN PROGRESS", style = MaterialTheme.typography.titleLarge, color = GbbColors.Green)
                             Text(session.name, style = MaterialTheme.typography.titleMedium, color = GbbColors.Chalk)
                         }
+                        PixelButton(
+                            "DELETE",
+                            onClick = { confirmDiscard = session },
+                            color = GbbColors.Red,
+                            small = true,
+                        )
+                        Spacer(Modifier.width(8.dp))
                         PixelButton("RESUME", onClick = { onOpenSession(session.id) }, color = GbbColors.Green, small = true)
                     }
                 }
@@ -90,6 +103,20 @@ fun WorkoutsTab(
     }
 
     StartWorkoutDialog(starter)
+
+    confirmDiscard?.let { session ->
+        ConfirmDialog(
+            title = "DELETE WORKOUT?",
+            message = "${session.name} is still in progress. Everything logged in it will be thrown away.",
+            confirmText = "DELETE",
+            destructive = true,
+            onConfirm = {
+                confirmDiscard = null
+                viewModel.discard(session.id)
+            },
+            onDismiss = { confirmDiscard = null },
+        )
+    }
 }
 
 @Composable

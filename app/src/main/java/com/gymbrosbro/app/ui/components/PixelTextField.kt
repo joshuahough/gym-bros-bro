@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -18,16 +19,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.gymbrosbro.app.ui.theme.GbbColors
 import com.gymbrosbro.app.ui.theme.PixelDimens
 
-/** Text input in a pixel frame; the border turns gold while focused. */
+/**
+ * Text input in a pixel frame; the border turns gold while focused. DONE
+ * clears focus, which also puts the keyboard away.
+ */
 @Composable
 fun PixelTextField(
     value: String,
@@ -40,7 +46,9 @@ fun PixelTextField(
     textAlign: TextAlign = TextAlign.Start,
     fill: Color = GbbColors.Night,
     textStyle: TextStyle = MaterialTheme.typography.bodyLarge,
+    horizontalPadding: Dp = 10.dp,
 ) {
+    val focusManager = LocalFocusManager.current
     val interaction = remember { MutableInteractionSource() }
     val focused by interaction.collectIsFocusedAsState()
     val border = if (focused) GbbColors.Gold else GbbColors.Steel
@@ -63,11 +71,12 @@ fun PixelTextField(
             imeAction = imeAction,
             capitalization = if (keyboardType == KeyboardType.Text) KeyboardCapitalization.Words else KeyboardCapitalization.None,
         ),
+        keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
         singleLine = singleLine,
         interactionSource = interaction,
         decorationBox = { inner ->
             Box(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
+                modifier = Modifier.padding(horizontal = horizontalPadding, vertical = 10.dp),
                 contentAlignment = alignment,
             ) {
                 if (value.isEmpty()) {

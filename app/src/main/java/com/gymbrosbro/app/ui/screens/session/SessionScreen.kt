@@ -14,8 +14,13 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,16 +31,22 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.gymbrosbro.app.domain.model.Discipline
+import com.gymbrosbro.app.domain.model.TrackingType
 import com.gymbrosbro.app.domain.session.SetFormat
 import com.gymbrosbro.app.domain.units.UnitSystem
 import com.gymbrosbro.app.domain.units.Units
@@ -61,6 +72,7 @@ import com.gymbrosbro.app.ui.screens.library.MuscleIcon
 import com.gymbrosbro.app.ui.summaryLine
 import com.gymbrosbro.app.ui.theme.GbbColors
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.Instant
 
@@ -89,6 +101,13 @@ fun SessionScreen(
     var confirmFinish by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var pickDate by remember { mutableStateOf(false) }
+    val listState = rememberLazyListState()
+    val scope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
+
+    // Let go of the cursor when you switch apps, so coming back doesn't pop
+    // the keyboard up over the workout.
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { focusManager.clearFocus() }
 
     LaunchedEffect(pickedExercises) {
         if (pickedExercises != null) {
@@ -104,7 +123,10 @@ fun SessionScreen(
         PixelTopBar(s.session.name.uppercase(), onBack = onBack) {
             if (!s.isCompleted) ElapsedTime(s.session.startedAt)
         }
+        // Rows above the first exercise card, for scrolling to a card by index.
+        val leadingItems = (if (s.isCompleted) 1 else 0) + (if (s.needsBodyweight) 1 else 0)
         LazyColumn(
+            state = listState,
             modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
             contentPadding = PaddingValues(bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -150,6 +172,11 @@ fun SessionScreen(
                     isFirst = index == 0,
                     isLast = index == s.blocks.lastIndex,
                     viewModel = viewModel,
+                    onAllChecked = {
+                        if (index < s.blocks.lastIndex) {
+                            scope.launch { listState.easeToItem(leadingItems + index + 1) }
+                        }
+                    },
                 )
             }
             item {
@@ -162,8 +189,7 @@ fun SessionScreen(
                 PixelButton(
                     if (s.isCompleted) "DELETE WORKOUT" else "DISCARD WORKOUT",
                     onClick = { confirmDelete = true },
-                    color = GbbColors.Steel,
-                    contentColor = GbbColors.Chalk,
+                    color = GbbColors.Red,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -191,11 +217,11 @@ fun SessionScreen(
                 onDismiss = { confirmFinish = false },
             )
             else -> ConfirmDialog(
-                title = "FINISH WORKOUT?",
+                title = if (s.uncheckedSets > 0) "FINISH WORKOUT?" else "ALL SETS COMPLETED!",
                 message = if (s.uncheckedSets > 0) {
                     "${s.uncheckedSets} unchecked ${if (s.uncheckedSets == 1) "set" else "sets"} will be dropped."
                 } else {
-                    "Every set checked off. Lock it in?"
+                    "Finish workout?"
                 },
                 confirmText = "FINISH",
                 dismissText = "KEEP GOING",
@@ -249,6 +275,7 @@ private fun ExerciseBlockCard(
     isFirst: Boolean,
     isLast: Boolean,
     viewModel: SessionViewModel,
+    onAllChecked: () -> Unit,
 ) {
     val type = block.exercise.trackingType
     var confirmRemove by remember { mutableStateOf(false) }
@@ -262,6 +289,13 @@ private fun ExerciseBlockCard(
                     Text(block.exercise.name, style = MaterialTheme.typography.titleMedium, color = GbbColors.Chalk)
                     if (block.exercise.isUnilateral) {
                         Text("Reps per side", style = MaterialTheme.typography.bodySmall, color = GbbColors.Fog)
+                    }
+                    if (type == TrackingType.BODYWEIGHT_REPS) {
+                        Text(
+                            "Added weight optional, leave blank for bodyweight",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = GbbColors.Fog,
+                        )
                     }
                 }
                 OverflowMenu(
@@ -279,9 +313,14 @@ private fun ExerciseBlockCard(
                 val last = SetFormat.summary(type, block.lastTime, units)
                 if (last.isEmpty()) {
                     val recommended = recommendationText(block.exercise)
+                    // Bodyweight moves have no load to pick.
+                    val load = if (block.exercise.discipline == Discipline.CALISTHENICS) {
+                        ""
+                    } else {
+                        ", ${block.exercise.recommendedLoad.label.lowercase()} load"
+                    }
                     Text(
-                        "First time — set your baseline." +
-                            (recommended?.let { " Try $it, ${block.exercise.recommendedLoad.label.lowercase()} load." } ?: ""),
+                        "First time — set your baseline." + (recommended?.let { " Try $it$load." } ?: ""),
                         style = MaterialTheme.typography.bodyMedium,
                         color = GbbColors.Fog,
                     )
@@ -307,7 +346,12 @@ private fun ExerciseBlockCard(
                         type = type,
                         units = units,
                         onUpdate = { transform -> viewModel.updateSet(set.id, transform) },
-                        onToggleComplete = { viewModel.toggleComplete(set.id, block.exercise) },
+                        onToggleComplete = {
+                            // Checking off the last open set moves you on to the next exercise.
+                            val finishesBlock = !set.isCompleted && block.sets.none { it.id != set.id && !it.isCompleted }
+                            viewModel.toggleComplete(set.id, block.exercise)
+                            if (finishesBlock) onAllChecked()
+                        },
                         onToggleWarmup = { viewModel.toggleWarmup(set.id) },
                         onDelete = { viewModel.deleteSet(set.id) },
                     )
@@ -422,6 +466,20 @@ private fun BodyweightPrompt(units: UnitSystem, onSave: (Double) -> Unit, onSkip
                 PixelButton("SKIP", onClick = onSkip, small = true, color = GbbColors.Steel, contentColor = GbbColors.Chalk)
             }
         }
+    }
+}
+
+/**
+ * A beat after the check mark lands, glide the item to the top. Slower than
+ * animateScrollToItem so you can see where you're going.
+ */
+private suspend fun LazyListState.easeToItem(index: Int) {
+    delay(450)
+    val item = layoutInfo.visibleItemsInfo.firstOrNull { it.index == index }
+    if (item == null) {
+        animateScrollToItem(index)
+    } else {
+        animateScrollBy(item.offset.toFloat(), tween(durationMillis = 700, easing = FastOutSlowInEasing))
     }
 }
 

@@ -27,6 +27,7 @@ import androidx.lifecycle.viewModelScope
 import com.gymbrosbro.app.avatar.AvatarConfig
 import com.gymbrosbro.app.data.AwardsRepository
 import com.gymbrosbro.app.data.ProgressRepository
+import com.gymbrosbro.app.data.settings.SettingsRepository
 import com.gymbrosbro.app.data.ScheduleRepository
 import com.gymbrosbro.app.data.SessionRepository
 import com.gymbrosbro.app.data.StreakSummary
@@ -71,7 +72,11 @@ class HomeViewModel(
     templates: TemplateRepository,
     progress: ProgressRepository,
     awards: AwardsRepository,
+    settings: SettingsRepository,
 ) : ViewModel() {
+    val playerName: StateFlow<String?> = settings.playerName
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
     val avatar: StateFlow<AvatarConfig?> = awards.avatar
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
@@ -108,6 +113,7 @@ fun HomeScreen(onPressStart: () -> Unit, onOpenSession: (Long) -> Unit, onOpenLo
     val viewModel = appViewModel { c, _ ->
         HomeViewModel(
             c.sessionRepository, c.scheduleRepository, c.templateRepository, c.progressRepository, c.awardsRepository,
+            c.settings,
         )
     }
     val workouts = appViewModel { c, _ -> WorkoutsViewModel(c.templateRepository, c.sessionRepository) }
@@ -117,6 +123,7 @@ fun HomeScreen(onPressStart: () -> Unit, onOpenSession: (Long) -> Unit, onOpenLo
     val streaks by viewModel.streaks.collectAsStateWithLifecycle()
     val today by viewModel.today.collectAsStateWithLifecycle()
     val avatar by viewModel.avatar.collectAsStateWithLifecycle()
+    val playerName by viewModel.playerName.collectAsStateWithLifecycle()
     val level by viewModel.level.collectAsStateWithLifecycle()
     val trophies by viewModel.trophies.collectAsStateWithLifecycle()
 
@@ -151,7 +158,7 @@ fun HomeScreen(onPressStart: () -> Unit, onOpenSession: (Long) -> Unit, onOpenLo
                     avatar?.let { AvatarView(it, 148.dp) }
                 }
                 Spacer(Modifier.height(12.dp))
-                Text("PLAYER 1", style = MaterialTheme.typography.titleLarge, color = GbbColors.Chalk)
+                Text(playerName.orEmpty().uppercase(), style = MaterialTheme.typography.titleLarge, color = GbbColors.Chalk)
                 Spacer(Modifier.height(12.dp))
                 LevelBar(level, Modifier.fillMaxWidth())
             }

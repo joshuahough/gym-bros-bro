@@ -55,6 +55,9 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         prefs[AVATAR]?.let { runCatching { json.decodeFromString<AvatarConfig>(it) }.getOrNull() } ?: AvatarConfig()
     }
 
+    /** Shown under the avatar. Blank goes back to the default. */
+    val playerName: Flow<String> = dataStore.data.map { it[PLAYER_NAME] ?: DEFAULT_PLAYER_NAME }
+
     /** Version of the bundled exercise library last merged into the database. */
     val seedVersion: Flow<Int> = dataStore.data.map { it[SEED_VERSION] ?: 0 }
 
@@ -106,24 +109,41 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         dataStore.edit { it[AVATAR] = json.encodeToString(config) }
     }
 
+    suspend fun setPlayerName(name: String) {
+        val clean = cleanPlayerName(name)
+        dataStore.edit { if (clean.isEmpty()) it.remove(PLAYER_NAME) else it[PLAYER_NAME] = clean }
+    }
+
     suspend fun setSeedVersion(version: Int) {
         dataStore.edit { it[SEED_VERSION] = version }
     }
 
-    private companion object {
-        val UNIT_SYSTEM = stringPreferencesKey("unit_system")
-        val KEEP_SCREEN_ON = booleanPreferencesKey("keep_screen_on")
-        val SEED_VERSION = intPreferencesKey("seed_version")
-        val WEEK_START = stringPreferencesKey("week_start")
-        val WEEKLY_GOAL = intPreferencesKey("weekly_goal")
-        val REMINDERS_ENABLED = booleanPreferencesKey("reminders_enabled")
-        val REMINDER_MINUTES = intPreferencesKey("reminder_minutes")
-        val GRACE_REMINDER = booleanPreferencesKey("grace_reminder")
-        val REMINDER_OFFERED = booleanPreferencesKey("reminder_offered")
-        val SOUND = booleanPreferencesKey("sound")
-        val HAPTICS = booleanPreferencesKey("haptics")
-        val AVATAR = stringPreferencesKey("avatar")
-        val json = Json { ignoreUnknownKeys = true }
+    companion object {
+        const val DEFAULT_PLAYER_NAME = "PLAYER 1"
+        const val PLAYER_NAME_MAX = 12
+
+        /** Letters, digits and single spaces, up to [PLAYER_NAME_MAX] characters. */
+        fun cleanPlayerName(name: String): String = name
+            .filter { it.isLetterOrDigit() || it == ' ' }
+            .replace(Regex(" +"), " ")
+            .trim()
+            .take(PLAYER_NAME_MAX)
+            .trim()
+
+        private val UNIT_SYSTEM = stringPreferencesKey("unit_system")
+        private val KEEP_SCREEN_ON = booleanPreferencesKey("keep_screen_on")
+        private val SEED_VERSION = intPreferencesKey("seed_version")
+        private val WEEK_START = stringPreferencesKey("week_start")
+        private val WEEKLY_GOAL = intPreferencesKey("weekly_goal")
+        private val REMINDERS_ENABLED = booleanPreferencesKey("reminders_enabled")
+        private val REMINDER_MINUTES = intPreferencesKey("reminder_minutes")
+        private val GRACE_REMINDER = booleanPreferencesKey("grace_reminder")
+        private val REMINDER_OFFERED = booleanPreferencesKey("reminder_offered")
+        private val SOUND = booleanPreferencesKey("sound")
+        private val HAPTICS = booleanPreferencesKey("haptics")
+        private val AVATAR = stringPreferencesKey("avatar")
+        private val PLAYER_NAME = stringPreferencesKey("player_name")
+        private val json = Json { ignoreUnknownKeys = true }
     }
 }
 

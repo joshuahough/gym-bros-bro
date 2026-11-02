@@ -43,6 +43,10 @@ class WorkoutsViewModel(
         }
     }
 
+    fun discard(sessionId: Long) {
+        viewModelScope.launch { sessions.delete(sessionId) }
+    }
+
     private suspend fun create(templateId: Long?): Long =
         if (templateId == null) sessions.startEmpty() else sessions.startFromTemplate(templateId)
 }

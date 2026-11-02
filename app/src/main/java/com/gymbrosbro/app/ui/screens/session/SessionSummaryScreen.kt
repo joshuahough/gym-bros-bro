@@ -172,7 +172,7 @@ fun SessionSummaryScreen(onDone: () -> Unit) {
     val bw = d.session.bodyweightKgSnapshot ?: latestBodyweight?.weightKg
     val exercises = d.sortedExercises
     val totals = WorkoutMath.totals(exercises.map { it.exercise to it.sets }, bw)
-    val minutes = d.session.endedAt?.let { Duration.between(d.session.startedAt, it).toMinutes() } ?: 0
+    val seconds = d.session.endedAt?.let { Duration.between(d.session.startedAt, it).seconds.toInt() } ?: 0
     val staleBodyweight = latestBodyweight?.takeIf { ChronoUnit.DAYS.between(it.date, LocalDate.now()) > 30 }
 
     Column(Modifier.fillMaxSize().navigationBarsPadding()) {
@@ -202,7 +202,7 @@ fun SessionSummaryScreen(onDone: () -> Unit) {
             if (newTrophies.isNotEmpty() || newGear.isNotEmpty()) UnlocksPanel(newTrophies, newGear)
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatTile("TIME", "${minutes}m", GbbColors.Cyan, Modifier.weight(1f))
+                StatTile("TIME", SetFormat.duration(seconds), GbbColors.Cyan, Modifier.weight(1f))
                 StatTile("SETS", totals.sets.toString(), GbbColors.Green, Modifier.weight(1f))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {

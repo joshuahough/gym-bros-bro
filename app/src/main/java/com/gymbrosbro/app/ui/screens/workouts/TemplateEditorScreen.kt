@@ -44,6 +44,7 @@ import com.gymbrosbro.app.ui.components.OverflowMenu
 import com.gymbrosbro.app.ui.components.PixelButton
 import com.gymbrosbro.app.ui.components.PixelPanel
 import com.gymbrosbro.app.ui.components.PixelStepper
+import com.gymbrosbro.app.ui.components.PixelDurationField
 import com.gymbrosbro.app.ui.components.PixelTextField
 import com.gymbrosbro.app.ui.components.PixelTopBar
 import com.gymbrosbro.app.ui.navigation.TemplateEditorRoute
@@ -290,12 +291,10 @@ private fun TemplateItemCard(
             if (item.usesDuration) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("TIME", style = MaterialTheme.typography.labelMedium, color = GbbColors.Fog, modifier = Modifier.width(56.dp))
-                    PixelTextField(
-                        item.duration,
-                        { v -> onUpdate { copy(duration = v) } },
-                        Modifier.width(100.dp),
-                        "m:ss",
-                        textAlign = TextAlign.Center,
+                    PixelDurationField(
+                        seconds = SetFormat.parseDuration(item.duration),
+                        onChange = { v -> onUpdate { copy(duration = v?.let(SetFormat::duration).orEmpty()) } },
+                        modifier = Modifier.width(120.dp),
                     )
                 }
             }

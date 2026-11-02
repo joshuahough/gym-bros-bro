@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -42,6 +43,7 @@ import com.gymbrosbro.app.ui.color
 import com.gymbrosbro.app.ui.components.PixelButton
 import com.gymbrosbro.app.ui.components.PixelChip
 import com.gymbrosbro.app.ui.components.PixelStepper
+import com.gymbrosbro.app.ui.components.PixelDurationField
 import com.gymbrosbro.app.ui.components.PixelTextField
 import com.gymbrosbro.app.ui.components.PixelTopBar
 import com.gymbrosbro.app.ui.label
@@ -211,13 +213,12 @@ fun ExerciseEditorScreen(onBack: () -> Unit, onSaved: (id: String, wasEditing: B
                 }
             }
             if (d.usesDuration) {
-                Section("RECOMMENDED TIME (M:SS)") {
-                    PixelTextField(
-                        d.duration,
-                        { v -> viewModel.update { copy(duration = v) } },
-                        Modifier.width(120.dp),
-                        "0:45",
-                        keyboardType = KeyboardType.Text,
+                Section("RECOMMENDED TIME (MIN : SEC)") {
+                    PixelDurationField(
+                        seconds = SetFormat.parseDuration(d.duration),
+                        onChange = { v -> viewModel.update { copy(duration = v?.let(SetFormat::duration).orEmpty()) } },
+                        modifier = Modifier.width(140.dp),
+                        imeAction = ImeAction.Next,
                     )
                 }
             }
