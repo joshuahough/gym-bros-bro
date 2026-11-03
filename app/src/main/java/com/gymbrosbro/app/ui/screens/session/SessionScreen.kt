@@ -38,6 +38,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -66,6 +68,7 @@ import com.gymbrosbro.app.sprites.Sprites
 import com.gymbrosbro.app.ui.display
 import com.gymbrosbro.app.ui.format
 import com.gymbrosbro.app.ui.label
+import com.gymbrosbro.app.ui.modeLabel
 import com.gymbrosbro.app.ui.screens.library.recommendationText
 import com.gymbrosbro.app.ui.localDate
 import com.gymbrosbro.app.ui.screens.library.MuscleIcon
@@ -279,6 +282,8 @@ private fun ExerciseBlockCard(
 ) {
     val type = block.exercise.trackingType
     var confirmRemove by remember { mutableStateOf(false) }
+    var confirmSwitch by remember { mutableStateOf(false) }
+    val allWarmup = block.sets.isNotEmpty() && block.sets.all { it.isWarmup }
 
     PixelPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(12.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -287,6 +292,9 @@ private fun ExerciseBlockCard(
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text(block.exercise.name, style = MaterialTheme.typography.titleMedium, color = GbbColors.Chalk)
+                    if (allWarmup) {
+                        Text("Warm-up", style = MaterialTheme.typography.bodySmall, color = GbbColors.Orange)
+                    }
                     if (block.exercise.isUnilateral) {
                         Text("Reps per side", style = MaterialTheme.typography.bodySmall, color = GbbColors.Fog)
                     }
@@ -297,11 +305,27 @@ private fun ExerciseBlockCard(
                             color = GbbColors.Fog,
                         )
                     }
+                    block.alternate?.let { alt ->
+                        ModeSwitch(
+                            current = type,
+                            other = alt.trackingType,
+                            onSwitch = {
+                                if (block.sets.any { it.isCompleted }) confirmSwitch = true
+                                else viewModel.switchMode(block.sessionExerciseId, alt.id)
+                            },
+                            modifier = Modifier.padding(top = 6.dp),
+                        )
+                    }
                 }
                 OverflowMenu(
                     buildList {
                         if (!isFirst) add(MenuAction("Move up") { viewModel.moveExercise(block.sessionExerciseId, -1) })
                         if (!isLast) add(MenuAction("Move down") { viewModel.moveExercise(block.sessionExerciseId, 1) })
+                        add(
+                            MenuAction(if (allWarmup) "Mark as working sets" else "Mark all as warm-up") {
+                                viewModel.setExerciseWarmup(block.sessionExerciseId, !allWarmup)
+                            },
+                        )
                         add(MenuAction("Remove exercise", destructive = true) {
                             if (block.sets.any { it.isCompleted }) confirmRemove = true
                             else viewModel.removeExercise(block.sessionExerciseId)
@@ -313,8 +337,8 @@ private fun ExerciseBlockCard(
                 val last = SetFormat.summary(type, block.lastTime, units)
                 if (last.isEmpty()) {
                     val recommended = recommendationText(block.exercise)
-                    // Bodyweight moves have no load to pick.
-                    val load = if (block.exercise.discipline == Discipline.CALISTHENICS) {
+                    // Bodyweight moves and cardio have no load to pick.
+                    val load = if (block.exercise.discipline in setOf(Discipline.CALISTHENICS, Discipline.CARDIO)) {
                         ""
                     } else {
                         ", ${block.exercise.recommendedLoad.label.lowercase()} load"
@@ -367,6 +391,21 @@ private fun ExerciseBlockCard(
         }
     }
 
+    val alternate = block.alternate
+    if (confirmSwitch && alternate != null) {
+        ConfirmDialog(
+            title = "SWITCH TO ${alternate.trackingType.modeLabel}?",
+            message = "The sets you've checked off for ${block.exercise.name} will be cleared.",
+            confirmText = "SWITCH",
+            destructive = true,
+            onConfirm = {
+                confirmSwitch = false
+                viewModel.switchMode(block.sessionExerciseId, alternate.id)
+            },
+            onDismiss = { confirmSwitch = false },
+        )
+    }
+
     if (confirmRemove) {
         ConfirmDialog(
             title = "REMOVE EXERCISE?",
@@ -379,6 +418,32 @@ private fun ExerciseBlockCard(
             },
             onDismiss = { confirmRemove = false },
         )
+    }
+}
+
+/** Two-way switch for exercises that can be logged by time or by reps. */
+@Composable
+private fun ModeSwitch(current: TrackingType, other: TrackingType, onSwitch: () -> Unit, modifier: Modifier = Modifier) {
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        listOf(current, other).sortedBy { it.ordinal }.forEach { mode ->
+            val selected = mode == current
+            PixelPanel(
+                modifier = Modifier
+                    .semantics { this.selected = selected }
+                    .clickable(enabled = !selected, role = Role.Tab, onClickLabel = "Log by ${mode.modeLabel.lowercase()}") {
+                        onSwitch()
+                    },
+                fill = if (selected) GbbColors.Dusk else GbbColors.Night,
+                border = if (selected) GbbColors.Gold else GbbColors.Steel,
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+            ) {
+                Text(
+                    mode.modeLabel,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (selected) GbbColors.Gold else GbbColors.Fog,
+                )
+            }
+        }
     }
 }
 

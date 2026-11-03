@@ -34,13 +34,17 @@ import com.gymbrosbro.app.data.db.entity.WorkoutTemplateEntity
         EarnedTrophyEntity::class,
         UnlockedItemEntity::class,
     ],
-    version = 3,
+    version = 5,
     exportSchema = true,
     autoMigrations = [
         // 2: schedule tables.
         AutoMigration(from = 1, to = 2),
         // 3: trophies and locker unlocks.
         AutoMigration(from = 2, to = 3),
+        // 4: exercise.alternateId (time or reps for jump rope).
+        AutoMigration(from = 3, to = 4),
+        // 5: template_exercise.isWarmup.
+        AutoMigration(from = 4, to = 5),
     ],
 )
 @TypeConverters(Converters::class)

@@ -15,6 +15,16 @@ val TrackingType.label: String
         TrackingType.DURATION -> "Time"
         TrackingType.DISTANCE_DURATION -> "Distance + Time"
         TrackingType.WEIGHT_DISTANCE -> "Weight × Distance"
+        TrackingType.REPS -> "Reps Only"
+    }
+
+/** One word for the TIME / REPS switch on exercises that can be logged either way. */
+val TrackingType.modeLabel: String
+    get() = when (this) {
+        TrackingType.DURATION -> "TIME"
+        TrackingType.REPS, TrackingType.BODYWEIGHT_REPS -> "REPS"
+        TrackingType.WEIGHT_REPS -> "WEIGHT"
+        TrackingType.DISTANCE_DURATION, TrackingType.WEIGHT_DISTANCE -> "DISTANCE"
     }
 
 val Discipline.label: String

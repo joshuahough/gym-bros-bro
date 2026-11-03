@@ -51,6 +51,13 @@ class PrefillTest {
     }
 
     @Test
+    fun `a warm-up exercise copies last time's warm-ups`() {
+        val last = listOf(set(0, reps = 100, warmup = true), set(1, reps = 80, warmup = true))
+        assertEquals(listOf(SetDraft(), SetDraft()), Prefill.sets(2, last))
+        assertEquals(listOf(SetDraft(reps = 100), SetDraft(reps = 80)), Prefill.sets(2, last, warmup = true))
+    }
+
+    @Test
     fun `next set copies the bottom row`() {
         val existing = listOf(set(0, weightKg = 60.0, reps = 8), set(1, weightKg = 70.0, reps = 5, completed = false))
         assertEquals(SetDraft(weightKg = 70.0, reps = 5), Prefill.nextSet(existing))

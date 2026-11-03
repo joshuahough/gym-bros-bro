@@ -59,6 +59,12 @@ interface SessionDao {
     @Update
     suspend fun updateSessionExercises(exercises: List<SessionExerciseEntity>)
 
+    @Query("SELECT * FROM session_exercise WHERE id = :id")
+    suspend fun getSessionExercise(id: Long): SessionExerciseEntity?
+
+    @Query("DELETE FROM set_entry WHERE sessionExerciseId = :sessionExerciseId")
+    suspend fun deleteSets(sessionExerciseId: Long)
+
     @Query("DELETE FROM session_exercise WHERE id = :id")
     suspend fun deleteSessionExercise(id: Long)
 

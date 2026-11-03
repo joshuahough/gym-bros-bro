@@ -1,5 +1,5 @@
 {
- "version": 1,
+ "version": 3,
  "source": "free-exercise-db (Unlicense) + Gym Bros Bro curation",
  "exercises": [
   {
@@ -9576,6 +9576,68 @@
    "recommendedDurationSec": 1200
   },
   {
+   "id": "jump-rope-reps",
+   "name": "Jump Rope (Reps)",
+   "aliases": [
+    "rope jumping reps",
+    "skips",
+    "jump rope count"
+   ],
+   "discipline": "CARDIO",
+   "trackingType": "REPS",
+   "equipment": "OTHER",
+   "primaryMuscle": "CARDIO",
+   "secondaryMuscles": [
+    "QUADS",
+    "CALVES",
+    "HAMSTRINGS"
+   ],
+   "mechanic": null,
+   "recommendedLoad": "LIGHT",
+   "recommendedSets": 3,
+   "recommendedRepsMin": 50,
+   "recommendedRepsMax": 100,
+   "isUnilateral": false,
+   "bodyweightFactor": null,
+   "alternateId": "rope-jumping",
+   "instructions": [
+    "Hold an end of the rope in each hand with the rope behind you.",
+    "Swing the rope over your head and hop over it as it reaches the ground.",
+    "Stay light on the balls of your feet and keep the turns coming from your wrists.",
+    "Count every jump the rope clears. Log the count for each round."
+   ]
+  },
+  {
+   "id": "rope-jumping",
+   "name": "Jump Rope (Timed)",
+   "aliases": [
+    "jump rope",
+    "rope jumping",
+    "skipping",
+    "jump rope time"
+   ],
+   "discipline": "CARDIO",
+   "trackingType": "DURATION",
+   "equipment": "OTHER",
+   "primaryMuscle": "CARDIO",
+   "secondaryMuscles": [
+    "QUADS",
+    "CALVES",
+    "HAMSTRINGS"
+   ],
+   "mechanic": null,
+   "recommendedLoad": "LIGHT",
+   "isUnilateral": false,
+   "bodyweightFactor": null,
+   "instructions": [
+    "Hold an end of the rope in each hand. Position the rope behind you on the ground. Raise your arms up and turn the rope over your head bringing it down in front of you. When it reaches the ground, jump over it. Find a good turning pace that can be maintained. Different speeds and techniques can be used to introduce variation.",
+    "Rope jumping is exciting, challenges your coordination, and requires a lot of energy. A 150 lb person will burn about 350 calories jumping rope for 30 minutes, compared to over 450 calories running."
+   ],
+   "recommendedSets": 1,
+   "recommendedDurationSec": 600,
+   "alternateId": "jump-rope-reps"
+  },
+  {
    "id": "keg-load",
    "name": "Keg Load",
    "aliases": [],
@@ -15785,30 +15847,6 @@
    "recommendedSets": 3,
    "recommendedRepsMin": 12,
    "recommendedRepsMax": 15
-  },
-  {
-   "id": "rope-jumping",
-   "name": "Rope Jumping",
-   "aliases": [],
-   "discipline": "CARDIO",
-   "trackingType": "DURATION",
-   "equipment": "OTHER",
-   "primaryMuscle": "CARDIO",
-   "secondaryMuscles": [
-    "QUADS",
-    "CALVES",
-    "HAMSTRINGS"
-   ],
-   "mechanic": null,
-   "recommendedLoad": "LIGHT",
-   "isUnilateral": false,
-   "bodyweightFactor": null,
-   "instructions": [
-    "Hold an end of the rope in each hand. Position the rope behind you on the ground. Raise your arms up and turn the rope over your head bringing it down in front of you. When it reaches the ground, jump over it. Find a good turning pace that can be maintained. Different speeds and techniques can be used to introduce variation.",
-    "Rope jumping is exciting, challenges your coordination, and requires a lot of energy. A 150 lb person will burn about 350 calories jumping rope for 30 minutes, compared to over 450 calories running."
-   ],
-   "recommendedSets": 1,
-   "recommendedDurationSec": 600
   },
   {
    "id": "rope-straight-arm-pulldown",

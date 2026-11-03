@@ -15,7 +15,7 @@ import json
 import re
 from pathlib import Path
 
-SEED_VERSION = 1
+SEED_VERSION = 3
 SOURCE = "free-exercise-db (Unlicense) + Gym Bros Bro curation"
 
 HERE = Path(__file__).resolve().parent

@@ -1,5 +1,6 @@
 package com.gymbrosbro.app.data.db.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -49,6 +50,8 @@ data class TemplateExerciseEntity(
     val targetDurationSec: Int? = null,
     val targetDistanceM: Double? = null,
     val notes: String? = null,
+    /** Every set of this exercise starts as a warm-up; you can still flip them mid-workout. */
+    @ColumnInfo(defaultValue = "0") val isWarmup: Boolean = false,
 )
 
 @Entity(

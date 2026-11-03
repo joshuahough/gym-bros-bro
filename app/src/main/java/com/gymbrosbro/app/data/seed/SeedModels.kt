@@ -39,6 +39,7 @@ data class SeedExercise(
     val bodyweightFactor: Double? = null,
     val weightIncrementKg: Double? = null,
     val instructions: List<String> = emptyList(),
+    val alternateId: String? = null,
 ) {
     fun toEntity() = ExerciseEntity(
         id = id,
@@ -61,5 +62,6 @@ data class SeedExercise(
         weightIncrementKg = weightIncrementKg,
         instructions = instructions,
         source = ExerciseSource.SEED,
+        alternateId = alternateId,
     )
 }

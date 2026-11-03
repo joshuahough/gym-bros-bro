@@ -19,14 +19,19 @@ object Prefill {
     /**
      * [count] rows copied from last time's completed working sets, position by
      * position. If last time had fewer sets, the last one repeats; with no
-     * history the rows start empty.
+     * history the rows start empty. A [warmup] exercise copies last time's
+     * warm-ups too, since that's all it has.
      */
-    fun sets(count: Int, lastTime: List<SetEntryEntity>): List<SetDraft> {
-        val working = lastTime.filter { it.isCompleted && !it.isWarmup }.sortedBy { it.position }
+    fun sets(count: Int, lastTime: List<SetEntryEntity>, warmup: Boolean = false): List<SetDraft> {
+        val source = source(lastTime, warmup)
         return List(count.coerceAtLeast(1)) { i ->
-            (working.getOrNull(i) ?: working.lastOrNull())?.toDraft() ?: SetDraft()
+            (source.getOrNull(i) ?: source.lastOrNull())?.toDraft() ?: SetDraft()
         }
     }
+
+    /** The completed sets of last time that new rows copy from. */
+    fun source(lastTime: List<SetEntryEntity>, warmup: Boolean): List<SetEntryEntity> =
+        lastTime.filter { it.isCompleted && (warmup || !it.isWarmup) }.sortedBy { it.position }
 
     /** The "+ SET" button: copy the bottom row's numbers. */
     fun nextSet(existing: List<SetEntryEntity>): SetDraft =

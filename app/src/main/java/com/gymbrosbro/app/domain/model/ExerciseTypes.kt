@@ -21,6 +21,9 @@ enum class TrackingType {
 
     /** weight + distance (carries, sleds) */
     WEIGHT_DISTANCE,
+
+    /** reps only, no weight at all (jump rope counted in skips) */
+    REPS,
 }
 
 enum class Equipment {

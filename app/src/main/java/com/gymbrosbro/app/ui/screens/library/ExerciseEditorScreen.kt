@@ -72,7 +72,8 @@ data class ExerciseDraft(
     val instructions: String = "",
     val notes: String = "",
 ) {
-    val usesReps get() = trackingType == TrackingType.WEIGHT_REPS || trackingType == TrackingType.BODYWEIGHT_REPS
+    val usesReps get() = trackingType == TrackingType.WEIGHT_REPS || trackingType == TrackingType.BODYWEIGHT_REPS ||
+        trackingType == TrackingType.REPS
     val usesDuration get() = trackingType == TrackingType.DURATION || trackingType == TrackingType.DISTANCE_DURATION
     val isValid get() = name.isNotBlank()
 }

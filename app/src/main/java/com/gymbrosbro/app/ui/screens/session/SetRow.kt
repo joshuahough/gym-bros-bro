@@ -51,6 +51,7 @@ fun SetHeader(type: TrackingType, units: UnitSystem) {
         TrackingType.DURATION -> listOf("MIN : SEC")
         TrackingType.DISTANCE_DURATION -> listOf(Units.distanceUnit(units).uppercase(), "MIN : SEC")
         TrackingType.WEIGHT_DISTANCE -> listOf(weight, Units.shortDistanceUnit(units).uppercase())
+        TrackingType.REPS -> listOf("REPS")
     }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         HeaderText("SET", Modifier.width(LabelWidth))
@@ -99,6 +100,7 @@ fun SetRow(
                 RepsField(set.reps, fill) { v -> onUpdate { it.copy(reps = v) } }
             }
             TrackingType.DURATION -> DurationField(set.durationSec, fill) { v -> onUpdate { it.copy(durationSec = v) } }
+            TrackingType.REPS -> RepsField(set.reps, fill) { v -> onUpdate { it.copy(reps = v) } }
             TrackingType.DISTANCE_DURATION -> {
                 DecimalField(
                     dbValue = set.distanceM?.let { Units.metersToDisplay(it, units) },

@@ -96,7 +96,7 @@ object ExerciseStats {
     /** What the weekly chart measures for this tracking type. */
     fun weeklyValue(type: TrackingType, totals: WorkoutTotals): Double = when (type) {
         TrackingType.WEIGHT_REPS -> totals.volumeKg
-        TrackingType.BODYWEIGHT_REPS -> totals.reps.toDouble()
+        TrackingType.BODYWEIGHT_REPS, TrackingType.REPS -> totals.reps.toDouble()
         TrackingType.DURATION -> totals.durationSec.toDouble()
         TrackingType.DISTANCE_DURATION, TrackingType.WEIGHT_DISTANCE -> totals.distanceM
     }
@@ -106,7 +106,7 @@ object ExerciseStats {
             sets.maxByOrNull { s -> s.weightKg?.let { w -> s.reps?.let { Records.e1rm(w, it) } } ?: -1.0 }
                 ?.takeIf { s -> s.weightKg?.let { w -> s.reps?.let { Records.e1rm(w, it) } } != null }
                 ?: sets.maxByOrNull { it.weightKg ?: 0.0 }
-        TrackingType.BODYWEIGHT_REPS -> sets.maxByOrNull { it.reps ?: 0 }
+        TrackingType.BODYWEIGHT_REPS, TrackingType.REPS -> sets.maxByOrNull { it.reps ?: 0 }
         TrackingType.DURATION -> sets.maxByOrNull { it.durationSec ?: 0 }
         TrackingType.DISTANCE_DURATION -> sets.maxByOrNull { it.distanceM ?: 0.0 }
         TrackingType.WEIGHT_DISTANCE -> sets.maxByOrNull { it.weightKg ?: 0.0 }

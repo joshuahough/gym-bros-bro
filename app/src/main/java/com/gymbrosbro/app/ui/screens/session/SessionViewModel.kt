@@ -45,10 +45,16 @@ data class ExerciseBlock(
     val lastTime: List<SetEntryEntity>,
     /** Overload chips (SPEC §8); empty when editing history or with nothing left to fill. */
     val suggestions: List<Suggestion> = emptyList(),
+    /** The other way to log this exercise (time ↔ reps), if it has one. Live workouts only. */
+    val alternate: ExerciseEntity? = null,
 )
 
 /** What earlier workouts say about one exercise: last time's sets and the records to beat. */
-private data class ExerciseContext(val lastTime: List<SetEntryEntity>, val bests: Map<RecordType, Double>)
+private data class ExerciseContext(
+    val lastTime: List<SetEntryEntity>,
+    val bests: Map<RecordType, Double>,
+    val alternate: ExerciseEntity?,
+)
 
 /** The NEW HIGH SCORE pop-up. */
 data class HighScore(val exercise: ExerciseEntity, val hits: List<RecordHit>)
@@ -92,7 +98,8 @@ class SessionViewModel(
                     exercise.trackingType,
                     prior.map { Performance(it.session.id, it.session.startedAt, it.sets) },
                 ).bests.mapValues { it.value.value }
-                exercise.id to ExerciseContext(prior.firstOrNull()?.sortedSets.orEmpty(), bests)
+                val alternate = exercise.alternateId?.let { sessions.getExercise(it) }
+                exercise.id to ExerciseContext(prior.firstOrNull()?.sortedSets.orEmpty(), bests, alternate)
             }
         }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
@@ -112,7 +119,8 @@ class SessionViewModel(
     ) { d, contexts, latestBodyweight, dismissed, units ->
         d ?: return@combine null
         val blocks = d.sortedExercises.map { se ->
-            val last = contexts[se.exercise.id]?.lastTime.orEmpty()
+            val context = contexts[se.exercise.id]
+            val last = context?.lastTime.orEmpty()
             val open = se.sets.any { !it.isCompleted && !it.isWarmup }
             ExerciseBlock(
                 sessionExerciseId = se.sessionExercise.id,
@@ -120,6 +128,7 @@ class SessionViewModel(
                 sets = se.sortedSets,
                 lastTime = last,
                 suggestions = if (open) Overload.suggest(se.exercise, last, units) else emptyList(),
+                alternate = context?.alternate,
             )
         }
         val bw = d.session.bodyweightKgSnapshot ?: latestBodyweight?.weightKg
@@ -183,6 +192,13 @@ class SessionViewModel(
     fun addExercises(ids: List<String>) = launch { sessions.addExercises(sessionId, ids) }
 
     fun removeExercise(sessionExerciseId: Long) = launch { sessions.removeExercise(sessionExerciseId) }
+
+    fun setExerciseWarmup(sessionExerciseId: Long, warmup: Boolean) =
+        launch { sessions.setExerciseWarmup(sessionExerciseId, warmup) }
+
+    /** Time ↔ reps: swaps in the alternate exercise with fresh rows. */
+    fun switchMode(sessionExerciseId: Long, alternateId: String) =
+        launch { sessions.switchExercise(sessionExerciseId, alternateId) }
 
     fun moveExercise(sessionExerciseId: Long, delta: Int) = launch { sessions.moveExercise(sessionId, sessionExerciseId, delta) }
 

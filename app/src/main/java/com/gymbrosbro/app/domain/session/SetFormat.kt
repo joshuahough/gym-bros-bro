@@ -37,6 +37,7 @@ object SetFormat {
             }
             TrackingType.BODYWEIGHT_REPS -> groupedReps(done) { s -> bodyweightLabel(s.addedWeightKg, system) }
             TrackingType.DURATION -> done.joinToString(", ") { duration(it.durationSec ?: 0) }
+            TrackingType.REPS -> done.joinToString(", ") { "${it.reps ?: 0}" } + " reps"
             TrackingType.DISTANCE_DURATION -> done.joinToString(", ") { s ->
                 listOfNotNull(
                     s.distanceM?.let { Units.formatDistance(it, system) },

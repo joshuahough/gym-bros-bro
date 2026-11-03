@@ -51,6 +51,11 @@
     },
     "running-treadmill": {
       "aliases": ["treadmill run", "treadmill"]
+    },
+    "rope-jumping": {
+      "name": "Jump Rope (Timed)",
+      "aliases": ["jump rope", "rope jumping", "skipping", "jump rope time"],
+      "alternateId": "jump-rope-reps"
     }
   },
   "additions": [
@@ -116,6 +121,30 @@
         "Walk at a brisk pace with an upright posture.",
         "Swing your arms naturally and keep a steady rhythm.",
         "Log total distance and time."
+      ]
+    },
+    {
+      "id": "jump-rope-reps",
+      "name": "Jump Rope (Reps)",
+      "aliases": ["rope jumping reps", "skips", "jump rope count"],
+      "discipline": "CARDIO",
+      "trackingType": "REPS",
+      "equipment": "OTHER",
+      "primaryMuscle": "CARDIO",
+      "secondaryMuscles": ["QUADS", "CALVES", "HAMSTRINGS"],
+      "mechanic": null,
+      "recommendedLoad": "LIGHT",
+      "recommendedSets": 3,
+      "recommendedRepsMin": 50,
+      "recommendedRepsMax": 100,
+      "isUnilateral": false,
+      "bodyweightFactor": null,
+      "alternateId": "rope-jumping",
+      "instructions": [
+        "Hold an end of the rope in each hand with the rope behind you.",
+        "Swing the rope over your head and hop over it as it reaches the ground.",
+        "Stay light on the balls of your feet and keep the turns coming from your wrists.",
+        "Count every jump the rope clears. Log the count for each round."
       ]
     }
   ]

@@ -62,7 +62,7 @@ object Records {
     /** Records a single set can break; these trigger NEW HIGH SCORE as you log. */
     fun setTypes(type: TrackingType): List<RecordType> = when (type) {
         TrackingType.WEIGHT_REPS -> listOf(RecordType.MAX_WEIGHT, RecordType.BEST_E1RM)
-        TrackingType.BODYWEIGHT_REPS -> listOf(RecordType.MAX_REPS)
+        TrackingType.BODYWEIGHT_REPS, TrackingType.REPS -> listOf(RecordType.MAX_REPS)
         TrackingType.DURATION -> listOf(RecordType.LONGEST_DURATION)
         TrackingType.DISTANCE_DURATION -> listOf(RecordType.LONGEST_DISTANCE)
         TrackingType.WEIGHT_DISTANCE -> listOf(RecordType.MAX_WEIGHT)
@@ -71,7 +71,7 @@ object Records {
     /** Records that only make sense for a whole workout; shown on the finish screen. */
     fun sessionTypes(type: TrackingType): List<RecordType> = when (type) {
         TrackingType.WEIGHT_REPS -> listOf(RecordType.MAX_SESSION_VOLUME)
-        TrackingType.BODYWEIGHT_REPS -> listOf(RecordType.MAX_SESSION_REPS)
+        TrackingType.BODYWEIGHT_REPS, TrackingType.REPS -> listOf(RecordType.MAX_SESSION_REPS)
         else -> emptyList()
     }
 

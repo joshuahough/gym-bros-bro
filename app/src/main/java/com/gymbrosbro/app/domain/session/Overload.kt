@@ -35,6 +35,7 @@ object Overload {
             TrackingType.DURATION -> duration(working)
             TrackingType.DISTANCE_DURATION -> distance(working, units)
             TrackingType.WEIGHT_DISTANCE -> weightDistance(exercise, working, units)
+            TrackingType.REPS -> repsOnly(working)
         }
     }
 
@@ -107,6 +108,23 @@ object Overload {
             suggestions += Suggestion(Suggestion.Kind.MORE_REPS, "+2 reps per set", plus(2))
         }
         return suggestions
+    }
+
+    /** No weight to add, so just more reps; big counts (100 skips) step by 5 or 10. */
+    private fun repsOnly(working: List<SetEntryEntity>): List<Suggestion> {
+        val withReps = working.filter { (it.reps ?: 0) > 0 }
+        if (withReps.isEmpty()) return emptyList()
+        val best = withReps.maxOf { it.reps!! }
+        val step = when {
+            best >= 50 -> 10
+            best >= 20 -> 5
+            else -> 1
+        }
+        val plus = { n: Int -> withReps.map { SetDraft(reps = it.reps!! + n) } }
+        return listOf(
+            Suggestion(Suggestion.Kind.MORE_REPS, "+$step ${if (step == 1) "rep" else "reps"} per set", plus(step)),
+            Suggestion(Suggestion.Kind.MORE_REPS, "+${step * 2} reps per set", plus(step * 2)),
+        )
     }
 
     private fun duration(working: List<SetEntryEntity>): List<Suggestion> {

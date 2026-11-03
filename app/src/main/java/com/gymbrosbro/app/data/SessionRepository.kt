@@ -4,6 +4,7 @@ import androidx.room.withTransaction
 import com.gymbrosbro.app.data.db.ExercisePerformance
 import com.gymbrosbro.app.data.db.GymDatabase
 import com.gymbrosbro.app.data.db.SessionWithExercises
+import com.gymbrosbro.app.data.db.entity.ExerciseEntity
 import com.gymbrosbro.app.data.db.entity.SessionExerciseEntity
 import com.gymbrosbro.app.data.db.entity.SetEntryEntity
 import com.gymbrosbro.app.data.db.entity.WorkoutSessionEntity
@@ -49,7 +50,7 @@ class SessionRepository(
         val template = checkNotNull(templates.getTemplate(templateId)) { "Workout $templateId not found" }
         val sessionId = dao.insertSession(newSession(templateId, template.template.name))
         template.sortedExercises.forEachIndexed { i, te ->
-            addExercise(sessionId, te.exercise.id, i, te.templateExercise.targetSets)
+            addExercise(sessionId, te.exercise.id, i, te.templateExercise.targetSets, te.templateExercise.isWarmup)
         }
         sessionId
     }
@@ -90,17 +91,55 @@ class SessionRepository(
      * Adds an exercise with pre-filled rows. Set count: the workout's target,
      * else how many you did last time, else the exercise's recommendation.
      */
-    private suspend fun addExercise(sessionId: Long, exerciseId: String, position: Int, targetSets: Int?) {
-        val exercise = checkNotNull(exerciseDao.getById(exerciseId)) { "Exercise $exerciseId not found" }
+    private suspend fun addExercise(
+        sessionId: Long,
+        exerciseId: String,
+        position: Int,
+        targetSets: Int?,
+        warmup: Boolean = false,
+    ) {
         val sessionExerciseId = dao.insertSessionExercise(
             SessionExerciseEntity(sessionId = sessionId, exerciseId = exerciseId, position = position),
         )
+        prefill(sessionId, sessionExerciseId, exerciseId, targetSets, warmup)
+    }
+
+    /**
+     * Swaps an exercise in a session for its alternate (time ↔ reps). The old
+     * rows are dropped and the new ones pre-filled from that mode's last time.
+     */
+    suspend fun switchExercise(sessionExerciseId: Long, exerciseId: String) = database.withTransaction {
+        val se = dao.getSessionExercise(sessionExerciseId) ?: return@withTransaction
+        val old = dao.getSets(sessionExerciseId)
+        val warmup = old.isNotEmpty() && old.all { it.isWarmup }
+        dao.deleteSets(sessionExerciseId)
+        dao.updateSessionExercises(listOf(se.copy(exerciseId = exerciseId)))
+        prefill(se.sessionId, sessionExerciseId, exerciseId, targetSets = null, warmup = warmup)
+    }
+
+    /** Marks every set of an exercise as warm-ups, or every set as working. */
+    suspend fun setExerciseWarmup(sessionExerciseId: Long, warmup: Boolean) = database.withTransaction {
+        dao.getSets(sessionExerciseId).filter { it.isWarmup != warmup }.forEach { dao.updateSet(it.copy(isWarmup = warmup)) }
+    }
+
+    suspend fun getExercise(id: String): ExerciseEntity? = exerciseDao.getById(id)
+
+    private suspend fun prefill(
+        sessionId: Long,
+        sessionExerciseId: Long,
+        exerciseId: String,
+        targetSets: Int?,
+        warmup: Boolean = false,
+    ) {
+        val exercise = checkNotNull(exerciseDao.getById(exerciseId)) { "Exercise $exerciseId not found" }
         val last = lastSets(exerciseId, excludeSessionId = sessionId)
         val count = targetSets
-            ?: last.count { it.isCompleted && !it.isWarmup }.takeIf { it > 0 }
+            ?: Prefill.source(last, warmup).size.takeIf { it > 0 }
             ?: exercise.recommendedSets
             ?: 3
-        dao.insertSets(Prefill.sets(count, last).mapIndexed { i, d -> d.toEntity(sessionExerciseId, i) })
+        dao.insertSets(
+            Prefill.sets(count, last, warmup).mapIndexed { i, d -> d.toEntity(sessionExerciseId, i, warmup) },
+        )
     }
 
     suspend fun lastSets(exerciseId: String, excludeSessionId: Long): List<SetEntryEntity> =
@@ -221,9 +260,10 @@ class SessionRepository(
         templates.save(templateId, template.template.name, TemplateSync.drafts(session, template))
     }
 
-    private fun SetDraft.toEntity(sessionExerciseId: Long, position: Int) = SetEntryEntity(
+    private fun SetDraft.toEntity(sessionExerciseId: Long, position: Int, warmup: Boolean = false) = SetEntryEntity(
         sessionExerciseId = sessionExerciseId,
         position = position,
+        isWarmup = warmup,
         weightKg = weightKg,
         reps = reps,
         addedWeightKg = addedWeightKg,

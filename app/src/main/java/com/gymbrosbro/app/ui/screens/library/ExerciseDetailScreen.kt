@@ -264,7 +264,7 @@ fun recommendationText(e: ExerciseEntity): String? {
     val sets = e.recommendedSets ?: return null
     val setsLabel = "$sets ${if (sets == 1) "set" else "sets"}"
     return when (e.trackingType) {
-        TrackingType.WEIGHT_REPS, TrackingType.BODYWEIGHT_REPS -> {
+        TrackingType.WEIGHT_REPS, TrackingType.BODYWEIGHT_REPS, TrackingType.REPS -> {
             val min = e.recommendedRepsMin
             val max = e.recommendedRepsMax
             when {
@@ -294,7 +294,7 @@ private fun PersonalPanels(e: ExerciseEntity, summary: ExerciseSummary, units: U
                 add("Total reps" to "%,d".format(summary.totals.reps))
                 add("Total lifted" to formatVolume(summary.totals.volumeKg, units))
             }
-            TrackingType.BODYWEIGHT_REPS -> {
+            TrackingType.BODYWEIGHT_REPS, TrackingType.REPS -> {
                 summary.maxReps?.let { add("Most reps" to it.toString()) }
                 add("Total reps" to "%,d".format(summary.totals.reps))
                 if (summary.totals.volumeKg > 0) add("Total lifted" to formatVolume(summary.totals.volumeKg, units))
@@ -396,21 +396,21 @@ private fun Legend(label: String, color: Color) {
 
 private fun progressChartLabel(type: TrackingType) = when (type) {
     TrackingType.WEIGHT_REPS, TrackingType.WEIGHT_DISTANCE -> "Top weight"
-    TrackingType.BODYWEIGHT_REPS -> "Most reps"
+    TrackingType.BODYWEIGHT_REPS, TrackingType.REPS -> "Most reps"
     TrackingType.DURATION -> "Longest"
     TrackingType.DISTANCE_DURATION -> "Farthest"
 }
 
 private fun weeklyChartLabel(type: TrackingType) = when (type) {
     TrackingType.WEIGHT_REPS -> "Weekly volume"
-    TrackingType.BODYWEIGHT_REPS -> "Weekly reps"
+    TrackingType.BODYWEIGHT_REPS, TrackingType.REPS -> "Weekly reps"
     TrackingType.DURATION -> "Weekly time"
     TrackingType.DISTANCE_DURATION, TrackingType.WEIGHT_DISTANCE -> "Weekly distance"
 }
 
 private fun weeklyFormat(type: TrackingType, value: Double, units: UnitSystem) = when (type) {
     TrackingType.WEIGHT_REPS -> formatVolume(value, units)
-    TrackingType.BODYWEIGHT_REPS -> "${value.toInt()} reps"
+    TrackingType.BODYWEIGHT_REPS, TrackingType.REPS -> "${value.toInt()} reps"
     TrackingType.DURATION -> SetFormat.duration(value.toInt())
     TrackingType.DISTANCE_DURATION, TrackingType.WEIGHT_DISTANCE -> Units.formatDistance(value, units)
 }

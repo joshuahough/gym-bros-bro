@@ -111,6 +111,9 @@ Seed exercises are read-only apart from the user flags and notes. "Duplicate & e
 | `DURATION` | seconds (+ optional added weight) | time |
 | `DISTANCE_DURATION` | distance, seconds | distance, time |
 | `WEIGHT_DISTANCE` | weight, distance (carries, sled) | distance (weight is shown but not added to volume) |
+| `REPS` | reps only (jump rope counted in skips) | reps |
+
+**Two ways to log one exercise.** An exercise can name an `alternateId`: the same movement logged another way, stored as its own library entry so each mode keeps its own records, stats and "last time". Jump Rope (Timed) ↔ Jump Rope (Reps) is the first pair. In a workout, a TIME / REPS switch under the name swaps one for the other and pre-fills from that mode's last time. If sets are already checked off, it asks first because they'll be cleared. Finishing offers to save the choice to the workout, like any other exercise change.
 
 ### 4.3 Muscle groups (one pixel icon each)
 
@@ -202,6 +205,7 @@ Custom calisthenics exercises can set their own factor.
 
 ### 7.2 Workouts (templates)
 - Create, rename, reorder, duplicate and archive templates. Each template is an ordered list of exercises with target sets and reps.
+- Each exercise is **WORKING** or **WARM-UP**. A warm-up exercise starts every workout with all its sets marked W, pre-filled from last time's warm-ups, with no suggestion chips. In the workout, ⋯ → "Mark as working sets" / "Mark all as warm-up" flips the whole exercise, and single sets can still be flipped from their number. Finishing offers to save the change to the workout.
 
 ### 7.3 Workout session (core loop)
 - **Start a session from:** today's scheduled workout, any template, or an empty quick workout.

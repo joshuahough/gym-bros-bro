@@ -28,7 +28,7 @@ object WorkoutMath {
     /** Whether a set has the numbers its tracking type needs to be checked off. */
     fun canComplete(type: TrackingType, set: SetEntryEntity): Boolean = when (type) {
         TrackingType.WEIGHT_REPS -> set.weightKg != null && (set.reps ?: 0) > 0
-        TrackingType.BODYWEIGHT_REPS -> (set.reps ?: 0) > 0
+        TrackingType.BODYWEIGHT_REPS, TrackingType.REPS -> (set.reps ?: 0) > 0
         TrackingType.DURATION -> (set.durationSec ?: 0) > 0
         TrackingType.DISTANCE_DURATION -> (set.distanceM ?: 0.0) > 0.0 || (set.durationSec ?: 0) > 0
         TrackingType.WEIGHT_DISTANCE -> set.weightKg != null && (set.distanceM ?: 0.0) > 0.0
@@ -57,7 +57,8 @@ object WorkoutMath {
     fun totals(exercise: ExerciseEntity, sets: List<SetEntryEntity>, bodyweightKg: Double?): WorkoutTotals {
         val done = sets.filter { it.isCompleted }
         val countsReps = exercise.trackingType == TrackingType.WEIGHT_REPS ||
-            exercise.trackingType == TrackingType.BODYWEIGHT_REPS
+            exercise.trackingType == TrackingType.BODYWEIGHT_REPS ||
+            exercise.trackingType == TrackingType.REPS
         return WorkoutTotals(
             sets = done.size,
             reps = if (countsReps) done.sumOf { it.reps ?: 0 } else 0,

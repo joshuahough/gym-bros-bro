@@ -44,6 +44,7 @@ import com.gymbrosbro.app.ui.components.OverflowMenu
 import com.gymbrosbro.app.ui.components.PixelButton
 import com.gymbrosbro.app.ui.components.PixelPanel
 import com.gymbrosbro.app.ui.components.PixelStepper
+import com.gymbrosbro.app.ui.components.PixelChip
 import com.gymbrosbro.app.ui.components.PixelDurationField
 import com.gymbrosbro.app.ui.components.PixelTextField
 import com.gymbrosbro.app.ui.components.PixelTopBar
@@ -64,8 +65,10 @@ data class TemplateItem(
     val repsMin: String,
     val repsMax: String,
     val duration: String,
+    val isWarmup: Boolean = false,
 ) {
-    val usesReps get() = exercise.trackingType == TrackingType.WEIGHT_REPS || exercise.trackingType == TrackingType.BODYWEIGHT_REPS
+    val usesReps get() = exercise.trackingType == TrackingType.WEIGHT_REPS ||
+        exercise.trackingType == TrackingType.BODYWEIGHT_REPS || exercise.trackingType == TrackingType.REPS
     val usesDuration get() = exercise.trackingType == TrackingType.DURATION || exercise.trackingType == TrackingType.DISTANCE_DURATION
 }
 
@@ -100,6 +103,7 @@ class TemplateEditorViewModel(
                             repsMin = x.targetRepsMin?.toString().orEmpty(),
                             repsMax = x.targetRepsMax?.toString().orEmpty(),
                             duration = x.targetDurationSec?.let(SetFormat::duration).orEmpty(),
+                            isWarmup = x.isWarmup,
                         )
                     },
                 )
@@ -154,6 +158,7 @@ class TemplateEditorViewModel(
                         targetRepsMax = if (item.usesReps) SetFormat.parseInt(item.repsMax) else null,
                         targetDurationSec = if (item.usesDuration) SetFormat.parseDuration(item.duration) else null,
                         targetDistanceM = item.exercise.recommendedDistanceM,
+                        isWarmup = item.isWarmup,
                     )
                 },
             )
@@ -223,8 +228,7 @@ fun TemplateEditorScreen(
                     PixelButton(
                         "DELETE WORKOUT",
                         onClick = { confirmDelete = true },
-                        color = GbbColors.Steel,
-                        contentColor = GbbColors.Chalk,
+                        color = GbbColors.Red,
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
@@ -274,6 +278,16 @@ private fun TemplateItemCard(
                         if (!isLast) add(MenuAction("Move down") { onMove(1) })
                         add(MenuAction("Remove", destructive = true, onClick = onRemove))
                     },
+                )
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("TYPE", style = MaterialTheme.typography.labelMedium, color = GbbColors.Fog, modifier = Modifier.width(48.dp))
+                PixelChip("WORKING", selected = !item.isWarmup, onClick = { onUpdate { copy(isWarmup = false) } })
+                PixelChip(
+                    "WARM-UP",
+                    selected = item.isWarmup,
+                    onClick = { onUpdate { copy(isWarmup = true) } },
+                    accent = GbbColors.Orange,
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {

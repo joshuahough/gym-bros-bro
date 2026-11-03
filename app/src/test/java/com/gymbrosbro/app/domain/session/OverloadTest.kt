@@ -85,6 +85,16 @@ class OverloadTest {
     }
 
     @Test
+    fun `reps only steps by bigger jumps for big counts`() {
+        val jumpRope = exercise(trackingType = TrackingType.REPS, equipment = Equipment.OTHER)
+        val s = Overload.suggest(jumpRope, listOf(set(0, reps = 100), set(1, reps = 80)), UnitSystem.IMPERIAL)
+        assertEquals("+10 reps per set", s[0].label)
+        assertEquals(listOf(110, 90), s[0].sets.map { it.reps })
+        assertEquals("+20 reps per set", s[1].label)
+        assertTrue(s.flatMap { it.sets }.all { it.addedWeightKg == null })
+    }
+
+    @Test
     fun `first time has no suggestions`() {
         assertTrue(Overload.suggest(bench, emptyList(), UnitSystem.IMPERIAL).isEmpty())
     }

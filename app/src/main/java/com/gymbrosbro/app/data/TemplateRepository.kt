@@ -17,6 +17,7 @@ data class TemplateExerciseDraft(
     val targetDurationSec: Int? = null,
     val targetDistanceM: Double? = null,
     val notes: String? = null,
+    val isWarmup: Boolean = false,
 )
 
 class TemplateRepository(private val database: GymDatabase) {
@@ -53,6 +54,7 @@ class TemplateRepository(private val database: GymDatabase) {
                         targetDurationSec = d.targetDurationSec,
                         targetDistanceM = d.targetDistanceM,
                         notes = d.notes,
+                        isWarmup = d.isWarmup,
                     )
                 },
             )

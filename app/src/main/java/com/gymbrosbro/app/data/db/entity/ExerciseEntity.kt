@@ -41,6 +41,11 @@ data class ExerciseEntity(
     val weightIncrementKg: Double?,
     val instructions: List<String>,
     val source: ExerciseSource,
+    /**
+     * The same exercise logged another way (Jump Rope (Timed) ↔ Jump Rope (Reps)).
+     * A session can switch between the two; each keeps its own records.
+     */
+    val alternateId: String? = null,
     // User flags (preserved across seed updates)
     val isFavorite: Boolean = false,
     val isHidden: Boolean = false,
