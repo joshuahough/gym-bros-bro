@@ -10,3 +10,20 @@
 .externalNativeBuild/
 .cxx/
 __pycache__/
+
+# Signing keys and their passwords (Phase 6) — never commit these
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+
+# Release builds and local secrets
+*.apk
+*.aab
+/app/release/
+.env
+*.hprof
+local.*.properties
+
+# Claude Code per-machine settings
+.claude/settings.local.json
