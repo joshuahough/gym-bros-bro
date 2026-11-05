@@ -13,7 +13,7 @@
 - **Offline-first.** No account or server is needed. All data lives on the device.
 - **Minimal notifications.** Workout reminders only, and they're opt-in. Nothing else, ever.
 - **Retro look, readable data.** Pixel font for headers, big numbers and celebrations. A clean readable font for lists, inputs and anything you read mid-set.
-- **Core features are free.** The optional Supporter Pack adds only cosmetic and fun extras.
+- **Free.** The app launches free with no in-app purchases. A cosmetic-only Supporter Pack may come later if the app gets traction (§10).
 
 ## 2. Tech stack
 
@@ -30,7 +30,7 @@
 | Charts | Custom Compose `Canvas` drawing (pixel-styled) |
 | Sprites | Pixel grids defined in code + palette, drawn with nearest-neighbor scaling |
 | Reminders | `AlarmManager.setAndAllowWhileIdle` (inexact, so no exact-alarm permission), re-registered on boot and on schedule change |
-| Billing (later) | Google Play Billing Library: one non-consumable product |
+| Billing (deferred) | Not in v1. If the Supporter Pack is added: Google Play Billing Library, one non-consumable product |
 | Min / target SDK | min 26 (Android 8.0); target the latest level Google Play requires |
 | Tests | JUnit for domain logic, in-memory Room tests for DAOs, Compose UI tests for the main flows |
 
@@ -300,7 +300,7 @@ Custom calisthenics exercises can set their own factor.
   - Headwear: headband, cap, beanie, crown. Hats hide hair that pokes out above them.
   - Top: tank, tee, stringer, hoodie, shirtless. Bottom: shorts, joggers. Top, bottom and shoes each take one of 12 gear colors.
   - Accessory: wristbands, lifting belt, headphones, gloves, gold chain.
-- You start with a basic set. More items unlock via level or trophies (lifetime totals unlock through their trophies); Supporter Pack items come in Phase 6.
+- You start with a basic set. More items unlock via level or trophies (lifetime totals unlock through their trophies). Supporter Pack items would come only if the pack is added later (§10).
 - In the LOCKER, tapping a locked item tries it on without saving and says how to unlock it.
 - **Player name:** RENAME on the Me tab; up to 12 letters, numbers or spaces, shown on Home and Me. Blank means PLAYER 1.
 - A 2-frame idle bob, plus a hop on PRs, trophies and level-ups. The avatar appears on Home, the Me tab, the locker and the finish screen.
@@ -346,7 +346,11 @@ Suggestions are always optional. They're based on the most recent session's **wo
 
 ## 10. Monetization
 
-- The app is a free download, with one **Supporter Pack** non-consumable in-app purchase (price TBD, $0.99–$2.99).
+**Decision (2026-11-05): v1 ships free, with no in-app purchases and no merchant account.** Monetizing would put the owner's full address on the public store listing, and a mailbox costs a monthly fee that a hobby project doesn't justify yet. Revisit the Supporter Pack only if the app gets real traction. The plan below is kept for that case.
+
+### Supporter Pack (deferred)
+
+- One **Supporter Pack** non-consumable in-app purchase (price TBD, $0.99–$2.99).
 - **Contents:**
   - Supporter-exclusive outfits
   - Alternate UI color palettes
@@ -366,7 +370,7 @@ Suggestions are always optional. They're based on the most recent session's **wo
 
 ### Merchant account caveat
 
-Turning monetization on is reported to be hard or impossible to reverse for an account. So the merchant account is set up only in Phase 6, when the Supporter Pack is actually ready.
+Turning monetization on is reported to be hard or impossible to reverse for an account. So don't create a merchant account or payments profile for v1. Set one up only if the Supporter Pack is built, and only after a PO box (annual billing, ideally with USPS Street Addressing) or virtual mailbox is in place.
 
 ## 11. Roadmap
 
@@ -378,20 +382,19 @@ Turning monetization on is reported to be hard or impossible to reverse for an a
 | **3. Fun layer** ✅ | XP/levels, achievements, avatar + locker + unlocks, all 15 muscle icons, sound effects and haptics | Workouts earn XP and unlock outfits |
 | **4. Touch-ups** ✅ | From the first real workout: minute + second time fields on the numpad, DONE on a set's last field, checking a set or leaving the app clears the cursor (no surprise keyboard), auto-scroll to the next exercise, "optional" hint on added weight, "All sets completed!" finish prompt, custom player name, delete an in-progress workout from Train | The owner's next workout has no keyboard or scrolling annoyances |
 | **5. Go public** ✅ | Audit the project for anything that shouldn't be public (keys, keystores, local paths, personal data, `local.properties`), tighten `.gitignore`, create the GitHub repo and push | Code is on GitHub with nothing private in it or its history |
-| **6. Ship** | Onboarding, export/import, Auto Backup check, accessibility and polish pass, Supporter Pack + billing, privacy policy, Data Safety form, store listing and screenshots, closed test (12+ testers × 14 days), production release | Live on Google Play |
+| **6. Ship** | Onboarding, export/import, Auto Backup check, accessibility and polish pass, privacy policy, Data Safety form, store listing and screenshots, closed test (12+ testers × 14 days), production release | Live on Google Play |
 
-**Backlog:** rest timer, animated exercise sprites, supersets, optional Cloud Save, plate calculator, home-screen widget, Health Connect export, small avatar body variations.
+**Backlog:** Supporter Pack + billing (only with traction; see §10), rest timer, animated exercise sprites, supersets, optional Cloud Save, plate calculator, home-screen widget, Health Connect export, small avatar body variations.
 
 **2.0:** more avatar poses, and animations of the avatar working out (lifting, curling, running...) that play when you open the app. A leaderboard where players see each other's accomplishments by player name.
 
 ## 12. Open questions
 
-1. **Supporter Pack** price and exact contents.
-2. **XP and level numbers.** Tune after a few weeks of real use.
+1. **XP and level numbers.** Tune after a few weeks of real use.
 
 ## 13. Owner to-dos before Phase 6 store setup
 
-- [ ] **Set up a PO box or virtual mailbox** *before* creating the merchant account. Its address becomes the public address on the store listing, and Google must accept it.
+- [x] ~~Set up a PO box or virtual mailbox.~~ Not needed: v1 ships free with no merchant account (§10). Don't create a payments profile during Play Console setup.
 - [ ] Line up 12+ closed-test testers who can commit to 14 days in a row.
 - [ ] Pay the $25 Play Console fee and complete ID verification.
 - [x] Name: **Gym Bros Bro**. A trademark search found no conflicts.
