@@ -1,3 +1,5 @@
+@file:UseSerializers(InstantSerializer::class, LocalDateSerializer::class)
+
 package com.gymbrosbro.app.data.db.entity
 
 import androidx.room.ColumnInfo
@@ -5,12 +7,17 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.gymbrosbro.app.data.backup.InstantSerializer
+import com.gymbrosbro.app.data.backup.LocalDateSerializer
 import com.gymbrosbro.app.domain.model.SessionStatus
 import java.time.Instant
 import java.time.LocalDate
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 
 // SPEC §4.4. Weights are kg, distances meters, durations seconds.
 
+@Serializable
 @Entity(tableName = "workout_template")
 data class WorkoutTemplateEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -21,6 +28,7 @@ data class WorkoutTemplateEntity(
     val archivedAt: Instant? = null,
 )
 
+@Serializable
 @Entity(
     tableName = "template_exercise",
     foreignKeys = [
@@ -54,6 +62,7 @@ data class TemplateExerciseEntity(
     @ColumnInfo(defaultValue = "0") val isWarmup: Boolean = false,
 )
 
+@Serializable
 @Entity(
     tableName = "workout_session",
     foreignKeys = [
@@ -79,6 +88,7 @@ data class WorkoutSessionEntity(
     val scheduledOccurrenceDate: LocalDate? = null,
 )
 
+@Serializable
 @Entity(
     tableName = "session_exercise",
     foreignKeys = [
@@ -105,6 +115,7 @@ data class SessionExerciseEntity(
     val notes: String? = null,
 )
 
+@Serializable
 @Entity(
     tableName = "set_entry",
     foreignKeys = [
@@ -133,6 +144,7 @@ data class SetEntryEntity(
     val completedAt: Instant? = null,
 )
 
+@Serializable
 @Entity(tableName = "bodyweight_entry")
 data class BodyweightEntryEntity(
     @PrimaryKey val date: LocalDate,

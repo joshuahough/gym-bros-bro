@@ -11,7 +11,9 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.gymbrosbro.app.avatar.AvatarConfig
 import com.gymbrosbro.app.domain.units.UnitSystem
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.time.DayOfWeek
 import java.time.LocalTime
@@ -57,6 +59,9 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
 
     /** Shown under the avatar. Blank goes back to the default. */
     val playerName: Flow<String> = dataStore.data.map { it[PLAYER_NAME] ?: DEFAULT_PLAYER_NAME }
+
+    /** The first-run setup was finished, skipped, or replaced by a restored backup. */
+    val onboarded: Flow<Boolean> = dataStore.data.map { it[ONBOARDED] ?: false }
 
     /** Version of the bundled exercise library last merged into the database. */
     val seedVersion: Flow<Int> = dataStore.data.map { it[SEED_VERSION] ?: 0 }
@@ -118,6 +123,49 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         dataStore.edit { it[SEED_VERSION] = version }
     }
 
+    suspend fun setOnboarded() {
+        dataStore.edit { it[ONBOARDED] = true }
+    }
+
+    /** The user's choices, for a backup file. Leaves out bookkeeping like the seed version. */
+    suspend fun snapshot(): SettingsSnapshot {
+        val reminders = reminders.first()
+        return SettingsSnapshot(
+            unitSystem = unitSystem.first(),
+            keepScreenOn = keepScreenOn.first(),
+            weekStart = weekStart.first(),
+            weeklyGoal = weeklyGoal.first(),
+            remindersEnabled = reminders.enabled,
+            reminderMinutes = reminders.time.hour * 60 + reminders.time.minute,
+            graceReminder = reminders.graceDay,
+            reminderOffered = reminders.offered,
+            sound = sound.first(),
+            haptics = haptics.first(),
+            avatar = avatar.first(),
+            playerName = playerName.first(),
+        )
+    }
+
+    /** Replaces the user's choices with a backup's, in one write. Also marks setup done. */
+    suspend fun restore(s: SettingsSnapshot) {
+        dataStore.edit {
+            it[UNIT_SYSTEM] = s.unitSystem.name
+            it[KEEP_SCREEN_ON] = s.keepScreenOn
+            it[WEEK_START] = s.weekStart.name
+            it[WEEKLY_GOAL] = s.weeklyGoal
+            it[REMINDERS_ENABLED] = s.remindersEnabled
+            it[REMINDER_MINUTES] = s.reminderMinutes.coerceIn(0, 24 * 60 - 1)
+            it[GRACE_REMINDER] = s.graceReminder
+            it[REMINDER_OFFERED] = s.reminderOffered
+            it[SOUND] = s.sound
+            it[HAPTICS] = s.haptics
+            it[AVATAR] = json.encodeToString(s.avatar)
+            val name = cleanPlayerName(s.playerName)
+            if (name.isEmpty()) it.remove(PLAYER_NAME) else it[PLAYER_NAME] = name
+            it[ONBOARDED] = true
+        }
+    }
+
     companion object {
         const val DEFAULT_PLAYER_NAME = "PLAYER 1"
         const val PLAYER_NAME_MAX = 12
@@ -143,6 +191,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         private val HAPTICS = booleanPreferencesKey("haptics")
         private val AVATAR = stringPreferencesKey("avatar")
         private val PLAYER_NAME = stringPreferencesKey("player_name")
+        private val ONBOARDED = booleanPreferencesKey("onboarded")
         private val json = Json { ignoreUnknownKeys = true }
     }
 }
@@ -158,3 +207,20 @@ data class ReminderSettings(
         val DEFAULT_TIME: LocalTime = LocalTime.of(7, 0)
     }
 }
+
+/** Everything the user set, as stored in a backup file. Defaults match a fresh install. */
+@Serializable
+data class SettingsSnapshot(
+    val unitSystem: UnitSystem = UnitSystem.IMPERIAL,
+    val keepScreenOn: Boolean = true,
+    val weekStart: DayOfWeek = DayOfWeek.MONDAY,
+    val weeklyGoal: Int = 3,
+    val remindersEnabled: Boolean = false,
+    val reminderMinutes: Int = 7 * 60,
+    val graceReminder: Boolean = false,
+    val reminderOffered: Boolean = false,
+    val sound: Boolean = true,
+    val haptics: Boolean = true,
+    val avatar: AvatarConfig = AvatarConfig(),
+    val playerName: String = SettingsRepository.DEFAULT_PLAYER_NAME,
+)

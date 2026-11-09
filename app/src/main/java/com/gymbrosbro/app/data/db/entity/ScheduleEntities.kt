@@ -1,13 +1,19 @@
+@file:UseSerializers(InstantSerializer::class, LocalDateSerializer::class)
+
 package com.gymbrosbro.app.data.db.entity
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.gymbrosbro.app.data.backup.InstantSerializer
+import com.gymbrosbro.app.data.backup.LocalDateSerializer
 import com.gymbrosbro.app.domain.model.ScheduleAction
 import com.gymbrosbro.app.domain.model.ScheduleKind
 import java.time.Instant
 import java.time.LocalDate
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 
 // SPEC §4.5 / §7.5.
 
@@ -16,6 +22,7 @@ import java.time.LocalDate
  * in place once they have past days — they're ended and replaced — so past
  * occurrences, and the streaks built on them, don't change after the fact.
  */
+@Serializable
 @Entity(
     tableName = "schedule_rule",
     foreignKeys = [
@@ -45,6 +52,7 @@ data class ScheduleRuleEntity(
 )
 
 /** Skip or move one occurrence of a rule. */
+@Serializable
 @Entity(
     tableName = "schedule_exception",
     foreignKeys = [
@@ -67,6 +75,7 @@ data class ScheduleExceptionEntity(
 )
 
 /** Vacation / sick days: occurrences inside are off, and streaks freeze. Dates inclusive. */
+@Serializable
 @Entity(tableName = "schedule_pause")
 data class SchedulePauseEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,

@@ -1,8 +1,12 @@
+@file:UseSerializers(InstantSerializer::class, LocalDateSerializer::class)
+
 package com.gymbrosbro.app.data.db.entity
 
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.gymbrosbro.app.data.backup.InstantSerializer
+import com.gymbrosbro.app.data.backup.LocalDateSerializer
 import com.gymbrosbro.app.domain.model.Discipline
 import com.gymbrosbro.app.domain.model.Equipment
 import com.gymbrosbro.app.domain.model.ExerciseSource
@@ -11,8 +15,11 @@ import com.gymbrosbro.app.domain.model.Mechanic
 import com.gymbrosbro.app.domain.model.MuscleGroup
 import com.gymbrosbro.app.domain.model.TrackingType
 import java.time.Instant
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 
 /** SPEC §4.1. Seed rows are read-only except the user flags at the bottom. */
+@Serializable
 @Entity(
     tableName = "exercise",
     indices = [Index("name"), Index("primaryMuscle")],

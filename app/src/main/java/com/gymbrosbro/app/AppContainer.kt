@@ -8,6 +8,7 @@ import com.gymbrosbro.app.data.ProgressRepository
 import com.gymbrosbro.app.data.ScheduleRepository
 import com.gymbrosbro.app.data.SessionRepository
 import com.gymbrosbro.app.data.TemplateRepository
+import com.gymbrosbro.app.data.backup.BackupRepository
 import com.gymbrosbro.app.data.db.GymDatabase
 import com.gymbrosbro.app.data.seed.SeedLoader
 import com.gymbrosbro.app.data.settings.SettingsRepository
@@ -31,6 +32,7 @@ class AppContainer(context: Context) {
     val scheduleRepository = ScheduleRepository(database)
     val progressRepository = ProgressRepository(sessionRepository, scheduleRepository, settings, appScope)
     val awardsRepository = AwardsRepository(database, progressRepository, settings)
+    val backupRepository = BackupRepository(database, settings, awardsRepository)
     val feedback = Feedback(context, settings, appScope)
     val seedLoader = SeedLoader(context.assets, database, settings)
 }

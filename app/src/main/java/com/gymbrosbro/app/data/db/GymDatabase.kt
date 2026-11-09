@@ -55,10 +55,13 @@ abstract class GymDatabase : RoomDatabase() {
     abstract fun bodyweightDao(): BodyweightDao
     abstract fun scheduleDao(): ScheduleDao
     abstract fun awardsDao(): AwardsDao
+    abstract fun backupDao(): BackupDao
 
     companion object {
+        const val NAME = "gymbrosbro.db"
+
         fun build(context: Context): GymDatabase =
-            Room.databaseBuilder(context, GymDatabase::class.java, "gymbrosbro.db")
+            Room.databaseBuilder(context, GymDatabase::class.java, NAME)
                 // Pre-release safety net: wipe if a migration is missing. Every
                 // schema change still gets a migration so test data survives.
                 .fallbackToDestructiveMigration(dropAllTables = true)
