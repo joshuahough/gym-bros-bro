@@ -397,5 +397,8 @@ Turning monetization on is reported to be hard or impossible to reverse for an a
 - [x] ~~Set up a PO box or virtual mailbox.~~ Not needed: v1 ships free with no merchant account (§10). Don't create a payments profile during Play Console setup.
 - [ ] Line up 12+ closed-test testers who can commit to 14 days in a row.
 - [ ] Pay the $25 Play Console fee and complete ID verification.
+- [ ] Create the upload key and `keystore.properties` (README → Release builds).
+- [ ] Turn on GitHub Pages (`main`, `/docs`) so the privacy policy is live.
+- [ ] Work through the release checklist in `store/play-console.md`.
 - [x] Name: **Gym Bros Bro**. A trademark search found no conflicts.
 - [x] Application ID: `com.gymbrosbro.app`.
