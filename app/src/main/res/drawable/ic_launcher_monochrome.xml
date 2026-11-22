@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Themed-icon layer: the bust with its outline cut out and the hair at half strength. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillAlpha="0.5"
+        android:pathData="M45,30.38h2.25v2.25h-2.25zM51.75,30.38h4.5v2.25h-4.5zM60.75,30.38h2.25v2.25h-2.25zM42.75,32.62h22.5v2.25h-22.5zM42.75,34.88h22.5v2.25h-22.5zM42.75,37.12h22.5v2.25h-22.5zM42.75,43.88h2.25v2.25h-2.25zM47.25,43.88h2.25v2.25h-2.25zM58.5,43.88h2.25v2.25h-2.25zM63,43.88h2.25v2.25h-2.25zM42.75,46.12h2.25v2.25h-2.25zM63,46.12h2.25v2.25h-2.25z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M42.75,39.38h22.5v2.25h-22.5zM42.75,41.62h22.5v2.25h-22.5zM45,43.88h2.25v2.25h-2.25zM49.5,43.88h9v2.25h-9zM60.75,43.88h2.25v2.25h-2.25zM45,46.12h2.25v2.25h-2.25zM49.5,46.12h9v2.25h-9zM60.75,46.12h2.25v2.25h-2.25zM42.75,48.38h22.5v2.25h-22.5zM45,50.62h6.75v2.25h-6.75zM56.25,50.62h6.75v2.25h-6.75zM47.25,52.88h13.5v2.25h-13.5zM47.25,55.12h13.5v2.25h-13.5zM42.75,57.38h22.5v2.25h-22.5zM36,59.62h36v2.25h-36zM33.75,61.88h40.5v2.25h-40.5zM31.5,64.12h45v2.25h-45zM31.5,66.38h6.75v2.25h-6.75zM40.5,66.38h27v2.25h-27zM69.75,66.38h6.75v2.25h-6.75zM31.5,68.62h4.5v2.25h-4.5zM42.75,68.62h22.5v2.25h-22.5zM72,68.62h4.5v2.25h-4.5zM31.5,70.88h4.5v2.25h-4.5zM42.75,70.88h22.5v2.25h-22.5zM72,70.88h4.5v2.25h-4.5zM33.75,73.12h6.75v2.25h-6.75zM45,73.12h18v2.25h-18zM67.5,73.12h6.75v2.25h-6.75zM36,75.38h6.75v2.25h-6.75zM45,75.38h18v2.25h-18zM65.25,75.38h6.75v2.25h-6.75zM36,77.62h36v2.25h-36z" />
+</vector>

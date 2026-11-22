@@ -47,10 +47,10 @@ Everything to paste or pick in Play Console for the first release. Limits are Pl
 
 **Privacy policy URL:** `https://joshuahough.github.io/gym-bros-bro/privacy-policy` (once GitHub Pages is on; see the checklist below)
 
-**Graphics needed:**
-- App icon, 512 × 512 PNG
-- Feature graphic, 1024 × 500
-- At least 2 phone screenshots (Home, a workout, Calendar, Stats and the Locker show it off best)
+**Graphics** (in [graphics/](graphics/), made from made-up sample data, so no real workouts appear):
+- App icon: `icon-512.png` (512 × 512)
+- Feature graphic: `feature-1024x500.png`
+- Phone screenshots, uploaded in this order: `screenshot-1.png` … `screenshot-8.png` (1080 × 1920): Home, workout in progress, new high score, Calendar, Stats, progress chart, Locker, exercise library
 
 ## App content
 
