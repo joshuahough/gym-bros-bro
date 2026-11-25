@@ -18,6 +18,7 @@ import com.gymbrosbro.app.domain.records.RecordHit
 import com.gymbrosbro.app.domain.records.RecordType
 import com.gymbrosbro.app.domain.records.Records
 import com.gymbrosbro.app.domain.session.Overload
+import com.gymbrosbro.app.domain.session.RepTarget
 import com.gymbrosbro.app.domain.session.Suggestion
 import com.gymbrosbro.app.domain.session.WorkoutMath
 import com.gymbrosbro.app.domain.session.WorkoutTotals
@@ -52,6 +53,9 @@ data class ExerciseBlock(
 /** What earlier workouts say about one exercise: last time's sets and the records to beat. */
 private data class ExerciseContext(
     val lastTime: List<SetEntryEntity>,
+    /** Sets from the latest workouts with working sets, newest first; what suggestions look at. */
+    val recent: List<List<SetEntryEntity>>,
+    val target: RepTarget,
     val bests: Map<RecordType, Double>,
     val alternate: ExerciseEntity?,
 )
@@ -92,6 +96,7 @@ class SessionViewModel(
         .distinctUntilChanged()
         .map { pair ->
             val (session, exercises) = pair ?: return@map emptyMap()
+            val plan = sessions.plannedExercises(session)
             exercises.associate { exercise ->
                 val prior = sessions.priorPerformances(exercise.id, session)
                 val bests = Records.history(
@@ -99,7 +104,17 @@ class SessionViewModel(
                     prior.map { Performance(it.session.id, it.session.startedAt, it.sets) },
                 ).bests.mapValues { it.value.value }
                 val alternate = exercise.alternateId?.let { sessions.getExercise(it) }
-                exercise.id to ExerciseContext(prior.firstOrNull()?.sortedSets.orEmpty(), bests, alternate)
+                exercise.id to ExerciseContext(
+                    lastTime = prior.firstOrNull()?.sortedSets.orEmpty(),
+                    // The same exercise twice in one workout still counts as one workout.
+                    recent = prior.filter { Overload.working(it.sets).isNotEmpty() }
+                        .distinctBy { it.session.id }
+                        .take(Overload.WORKOUTS_TO_CONFIRM)
+                        .map { it.sortedSets },
+                    target = RepTarget.of(exercise, plan[exercise.id]),
+                    bests = bests,
+                    alternate = alternate,
+                )
             }
         }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
@@ -127,7 +142,11 @@ class SessionViewModel(
                 exercise = se.exercise,
                 sets = se.sortedSets,
                 lastTime = last,
-                suggestions = if (open) Overload.suggest(se.exercise, last, units) else emptyList(),
+                suggestions = if (open && context != null) {
+                    Overload.suggest(se.exercise, context.recent, units, context.target)
+                } else {
+                    emptyList()
+                },
                 alternate = context?.alternate,
             )
         }

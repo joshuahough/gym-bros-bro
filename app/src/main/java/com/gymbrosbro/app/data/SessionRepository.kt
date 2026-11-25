@@ -7,6 +7,7 @@ import com.gymbrosbro.app.data.db.SessionWithExercises
 import com.gymbrosbro.app.data.db.entity.ExerciseEntity
 import com.gymbrosbro.app.data.db.entity.SessionExerciseEntity
 import com.gymbrosbro.app.data.db.entity.SetEntryEntity
+import com.gymbrosbro.app.data.db.entity.TemplateExerciseEntity
 import com.gymbrosbro.app.data.db.entity.WorkoutSessionEntity
 import com.gymbrosbro.app.domain.model.SessionStatus
 import com.gymbrosbro.app.domain.session.Prefill
@@ -148,6 +149,13 @@ class SessionRepository(
     /** Every earlier completed performance of [exerciseId], newest first. */
     suspend fun priorPerformances(exerciseId: String, session: WorkoutSessionEntity): List<ExercisePerformance> =
         dao.getPerformances(exerciseId, session.id, limit = Int.MAX_VALUE).filter { it.session.startedAt < session.startedAt }
+
+    /** The working exercises of the workout [session] was started from, by exercise id; empty without one. */
+    suspend fun plannedExercises(session: WorkoutSessionEntity): Map<String, TemplateExerciseEntity> =
+        session.templateId?.let { templates.getTemplate(it) }?.sortedExercises.orEmpty()
+            .map { it.templateExercise }
+            .filter { !it.isWarmup }
+            .associateBy { it.exerciseId }
 
     suspend fun removeExercise(sessionExerciseId: Long) = dao.deleteSessionExercise(sessionExerciseId)
 

@@ -50,6 +50,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.gymbrosbro.app.domain.model.Discipline
 import com.gymbrosbro.app.domain.model.TrackingType
 import com.gymbrosbro.app.domain.session.SetFormat
+import com.gymbrosbro.app.domain.session.Suggestion
 import com.gymbrosbro.app.domain.units.UnitSystem
 import com.gymbrosbro.app.domain.units.Units
 import com.gymbrosbro.app.ui.LocalUnitSystem
@@ -354,7 +355,7 @@ private fun ExerciseBlockCard(
                 if (block.suggestions.isNotEmpty()) {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         block.suggestions.forEach { suggestion ->
-                            SuggestionChip(suggestion.label) { viewModel.applySuggestion(block.sessionExerciseId, suggestion) }
+                            SuggestionChip(suggestion) { viewModel.applySuggestion(block.sessionExerciseId, suggestion) }
                         }
                     }
                 }
@@ -449,14 +450,15 @@ private fun ModeSwitch(current: TrackingType, other: TrackingType, onSwitch: () 
 
 /** Tap to fill the unchecked sets with a suggested next step. */
 @Composable
-private fun SuggestionChip(label: String, onClick: () -> Unit) {
+private fun SuggestionChip(suggestion: Suggestion, onClick: () -> Unit) {
     PixelPanel(
         modifier = Modifier.clickable(role = Role.Button, onClickLabel = "Use suggestion", onClick = onClick),
         fill = GbbColors.Dusk,
         border = GbbColors.Gold,
         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
     ) {
-        Text("▲ $label", style = MaterialTheme.typography.labelMedium, color = GbbColors.Gold)
+        val arrow = if (suggestion.kind == Suggestion.Kind.LIGHTER) "▼" else "▲"
+        Text("$arrow ${suggestion.label}", style = MaterialTheme.typography.labelMedium, color = GbbColors.Gold)
     }
 }
 

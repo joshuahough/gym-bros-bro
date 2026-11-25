@@ -325,16 +325,18 @@ Bottom bar with 5 tabs:
 
 ## 8. Progressive overload suggestions
 
-Suggestions are always optional. They're based on the most recent session's **working** sets for that exercise.
+Suggestions are always optional. They're based on **working** sets from the last two workouts that included the exercise.
 
 - **First time doing an exercise:** show its recommended sets, reps and load class only.
-- **`WEIGHT_REPS`:**
-  - Estimated 1RM uses the Epley formula: `e1RM = w × (1 + r/30)`, from the best set (sets above 12 reps are ignored as unreliable).
-  - **If every working set hit its reps**, offer two chips:
-    - **Heavier:** target reps = `r − 2` (minimum 3). Weight = `e1RM / (1 + target/30)`, shown as a range rounded down and up to the increment. *Example: 3 × 8 @ 145 → e1RM ≈ 184 → "150–155 × 6".*
-    - **More reps:** same weight, `r + 1`.
-  - **If reps dropped off:** suggest repeating the same weight and reps.
-- **`BODYWEIGHT_REPS`:** +1–2 reps per set. At the top of the recommended range, suggest added weight or a harder variation.
+- **Target range:** the rep range set on the workout you're doing; else the exercise's recommended range; else 8–12. The workout also says how many sets count as a full one.
+- **`WEIGHT_REPS`:** only sets at each workout's heaviest weight count. First match wins:
+  1. **Lighter:** every set fell short of the range two workouts in a row (and you hadn't just gone lighter). About 10% off, at the bottom of the range.
+  2. **Heavier:** every planned set reached the top of the range two workouts in a row at the same weight. One increment up, at the bottom of the range. *Example for 8–10: 3 × 10 @ 145 twice → "150 × 8".*
+  3. **Once more:** every planned set reached the top, for the first time at this weight. Repeat it to confirm.
+  4. **Same again:** reps dropped off between sets, or planned sets are missing.
+  5. **More reps:** same weight, `r + 1`.
+- **`BODYWEIGHT_REPS`:** +1–2 reps per set, up to the top of the range. Added weight follows the same two-workout rule (assisted reps lose assistance instead), with +1 rep still on offer. Falling short twice with added weight takes one increment off.
+- Weight never goes up on reps short of the range, or after a single good workout.
 - **`DURATION`:** +5–10 s.
 - **`DISTANCE_DURATION`:** same distance at a faster pace, or +5–10% distance.
 
